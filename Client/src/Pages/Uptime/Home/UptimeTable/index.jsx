@@ -329,6 +329,7 @@ MonitorTable.propTypes = {
 	setIsSearching: PropTypes.func,
 	isSearching: PropTypes.bool,
 	setMonitorUpdateTrigger: PropTypes.func,
+	handlePause: PropTypes.func,
 };
 
 const MemoizedMonitorTable = memo(MonitorTable);
