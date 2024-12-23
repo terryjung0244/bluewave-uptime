@@ -70,6 +70,15 @@ const startApp = async () => {
 	app.use(express.json());
 	app.use(helmet());
 
+	// Add db, jobQueue, emailService, and settingsService to request object for easy access
+	app.use((req, res, next) => {
+		req.db = db;
+		req.jobQueue = jobQueue;
+		req.emailService = emailService;
+		req.settingsService = settingsService;
+		next();
+	});
+
 	// Swagger UI
 	app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
@@ -152,15 +161,6 @@ const startApp = async () => {
 		Queue,
 		Worker
 	);
-
-	// Add db, jobQueue, emailService, and settingsService to request object for easy access
-	app.use((req, res, next) => {
-		req.db = db;
-		req.jobQueue = jobQueue;
-		req.emailService = emailService;
-		req.settingsService = settingsService;
-		next();
-	});
 
 	const shutdown = async () => {
 		if (isShuttingDown) {
