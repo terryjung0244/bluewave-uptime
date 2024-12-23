@@ -46,6 +46,7 @@ const paletteColors = {
 	green50: "#D4F4E1",
 	green150: "#45BB7A",
 	green400: "#079455",
+	green500: "#07B467",
 	green800: "#1C4428",
 	green900: "#12261E",
 	red50: "#F9ECED",
@@ -96,10 +97,10 @@ const semanticColors = {
 		},
 		contrastText: {
 			light: paletteColors.green50,
-			dark: paletteColors.green900,
+			dark: paletteColors.green50,
 		},
 		light: {
-			light: paletteColors.green50,
+			light: paletteColors.green500,
 			dark: paletteColors.green800,
 		},
 		dark: {
