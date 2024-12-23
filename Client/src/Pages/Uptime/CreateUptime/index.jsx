@@ -17,14 +17,13 @@ import LoadingButton from "@mui/lab/LoadingButton";
 
 //Components
 import Breadcrumbs from "../../../Components/Breadcrumbs";
-import { ConfigBox } from "../styled";
 import TextInput from "../../../Components/Inputs/TextInput";
 import { HttpAdornment } from "../../../Components/Inputs/TextInput/Adornments";
 import { createToast } from "../../../Utils/toastUtils";
 import Radio from "../../../Components/Inputs/Radio";
 import Checkbox from "../../../Components/Inputs/Checkbox";
 import Select from "../../../Components/Inputs/Select";
-
+import ConfigBox from "../../../Components/ConfigBox";
 const CreateMonitor = () => {
 	const MS_PER_MINUTE = 60000;
 	const SELECT_VALUES = [
@@ -60,8 +59,8 @@ const CreateMonitor = () => {
 	const theme = useTheme();
 	const { monitorId } = useParams();
 	const crumbs = [
-		{ name: "monitors", path: "/monitors" },
-		{ name: "create", path: `/monitors/create` },
+		{ name: "uptime", path: "/uptime" },
+		{ name: "create", path: `/uptime/create` },
 	];
 
 	// State
@@ -125,7 +124,7 @@ const CreateMonitor = () => {
 		const action = await dispatch(createUptimeMonitor({ authToken, monitor: form }));
 		if (action.meta.requestStatus === "fulfilled") {
 			createToast({ body: "Monitor created successfully!" });
-			navigate("/monitors");
+			navigate("/uptime");
 		} else {
 			createToast({ body: "Failed to create monitor." });
 		}
@@ -345,8 +344,6 @@ const CreateMonitor = () => {
 						</Typography>
 					</Box>
 					<Stack gap={theme.spacing(6)}>
-						<Typography component="p">When there is a new incident,</Typography>
-
 						<Checkbox
 							id="notify-email-default"
 							label={`Notify via email (to ${user.email})`}

@@ -6,7 +6,7 @@ import { Box, Stack, Tooltip, Typography } from "@mui/material";
 import { monitorValidation } from "../../../Validation/validation";
 import { createToast } from "../../../Utils/toastUtils";
 import { logger } from "../../../Utils/Logger";
-import { ConfigBox } from "../styled";
+import ConfigBox from "../../../Components/ConfigBox";
 import {
 	updateUptimeMonitor,
 	pauseUptimeMonitor,
@@ -141,6 +141,8 @@ const Configure = () => {
 			if (pauseUptimeMonitor.fulfilled.match(action)) {
 				const monitor = action.payload.data;
 				setMonitor(monitor);
+				const state = action?.payload?.data.isActive === false ? "paused" : "resumed";
+				createToast({ body: `Monitor ${state} successfully.` });
 			} else if (pauseUptimeMonitor.rejected.match(action)) {
 				throw new Error(action.error.message);
 			}
@@ -166,7 +168,7 @@ const Configure = () => {
 		event.preventDefault();
 		const action = await dispatch(deleteUptimeMonitor({ authToken, monitor }));
 		if (action.meta.requestStatus === "fulfilled") {
-			navigate("/monitors");
+			navigate("/uptime");
 		} else {
 			createToast({ body: "Failed to delete monitor." });
 		}
@@ -207,9 +209,9 @@ const Configure = () => {
 				<>
 					<Breadcrumbs
 						list={[
-							{ name: "monitors", path: "/monitors" },
-							{ name: "details", path: `/monitors/${monitorId}` },
-							{ name: "configure", path: `/monitors/configure/${monitorId}` },
+							{ name: "uptime", path: "/uptime" },
+							{ name: "details", path: `/uptime/${monitorId}` },
+							{ name: "configure", path: `/uptime/configure/${monitorId}` },
 						]}
 					/>
 					<Stack
@@ -282,7 +284,7 @@ const Configure = () => {
 											},
 										}}
 									>
-										Editting...
+										Editing...
 									</Typography>
 								</Stack>
 							</Box>
