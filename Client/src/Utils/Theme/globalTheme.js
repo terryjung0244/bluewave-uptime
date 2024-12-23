@@ -48,7 +48,7 @@ const baseTheme = (palette) => ({
 							props: (props) => props.variant === "group",
 							style: {
 								/* color: theme.palette.secondary.contrastText, */
-								color: theme.palette.neuter.contrastText,
+								color: theme.palette.neutral.contrastText,
 								backgroundColor: theme.palette.background.main,
 								border: 1,
 								borderStyle: "solid",
