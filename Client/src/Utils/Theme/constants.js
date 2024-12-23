@@ -108,7 +108,7 @@ const semanticColors = {
 			dark: paletteColors.green900,
 		},
 	},
-	neuter: {
+	neutral: {
 		contrastText: {
 			light: paletteColors.blueGray900,
 			dark: paletteColors.gray100,

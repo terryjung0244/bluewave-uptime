@@ -13,7 +13,7 @@ const {
 	success,
 	error,
 	warning,
-	neuter,
+	neutral,
 	gradient: {
 		color1: { light: color1 },
 		color2: { light: color2 },
@@ -58,8 +58,8 @@ const palette = {
 		contrastText: warning.contrastText.light,
 		dark: warning.dark.light,
 	},
-	neuter: {
-		contrastText: neuter.contrastText.light,
+	neutral: {
+		contrastText: neutral.contrastText.light,
 	},
 	/* From this part on, try to create semantic structure, not feature based structure */
 	percentage: {
