@@ -43,6 +43,7 @@ import DotsVertical from "../../assets/icons/dots-vertical.svg?react";
 import ChangeLog from "../../assets/icons/changeLog.svg?react";
 import Docs from "../../assets/icons/docs.svg?react";
 import Folder from "../../assets/icons/folder.svg?react";
+import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
 
 import "./index.css";
 
@@ -64,19 +65,30 @@ const menu = [
 		],
 	},
 	{
+		name: "Settings",
+		icon: <Settings />,
+		path: "settings",
+	},
+	{
 		name: "Other",
 		icon: <Folder />,
 		nested: [
-			{ name: "Settings", path: "settings", icon: <Settings /> },
 			{ name: "Support", path: "support", icon: <Support /> },
+			{
+				name: "Discussions",
+				path: "discussions",
+				icon: <ChatBubbleOutlineRoundedIcon />,
+			},
 			{ name: "Docs", path: "docs", icon: <Docs /> },
 			{ name: "Changelog", path: "changelog", icon: <ChangeLog /> },
 		],
 	},
 ];
 
+/* TODO this could be a key in nested Path would be the link */
 const URL_MAP = {
-	support: "https://github.com/bluewave-labs/bluewave-uptime/issues",
+	support: "https://discord.com/invite/NAb6H3UTjK",
+	discussions: "https://github.com/bluewave-labs/checkmate/discussions",
 	docs: "https://bluewavelabs.gitbook.io/checkmate",
 	changelog: "https://github.com/bluewave-labs/bluewave-uptime/releases",
 };
