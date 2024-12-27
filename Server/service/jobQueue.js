@@ -90,11 +90,30 @@ class JobQueue {
 			const monitors = await db.getAllMonitors();
 			for (const monitor of monitors) {
 				if (monitor.isActive) {
-					await queue.addJob(monitor.id, monitor);
+					queue.addJob(monitor.id, monitor).catch((error) => {
+						this.logger.error({
+							message: error.message,
+							service: SERVICE_NAME,
+							method: "createJobQueue",
+							stack: error.stack,
+						});
+					});
 				}
 			}
-			const workerStats = await queue.getWorkerStats();
-			await queue.scaleWorkers(workerStats);
+
+			queue
+				.getWorkerStats()
+				.then((workerStats) => {
+					queue.scaleWorkers(workerStats);
+				})
+				.catch((error) => {
+					this.logger.error({
+						message: error.message,
+						service: SERVICE_NAME,
+						method: "createJobQueue",
+						stack: error.stack,
+					});
+				});
 			return queue;
 		} catch (error) {
 			error.service === undefined ? (error.service = SERVICE_NAME) : null;
