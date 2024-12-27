@@ -143,6 +143,7 @@ class StatusService {
 				pagespeed: this.db.createPageSpeedCheck,
 				hardware: this.db.createHardwareCheck,
 				docker: this.db.createCheck,
+				port: this.db.createCheck,
 			};
 			const operation = operationMap[networkResponse.type];
 
