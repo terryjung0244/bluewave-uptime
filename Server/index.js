@@ -44,6 +44,7 @@ import axios from "axios";
 import ping from "ping";
 import http from "http";
 import Docker from "dockerode";
+import net from "net";
 
 // Email service and dependencies
 import EmailService from "./service/emailService.js";
@@ -129,7 +130,7 @@ const startApp = async () => {
 		nodemailer,
 		logger
 	);
-	const networkService = new NetworkService(axios, ping, logger, http, Docker);
+	const networkService = new NetworkService(axios, ping, logger, http, Docker, net);
 	const statusService = new StatusService(db, logger);
 	const notificationService = new NotificationService(emailService, db, logger);
 	const jobQueue = await JobQueue.createJobQueue(
