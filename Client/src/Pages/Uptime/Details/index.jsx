@@ -56,6 +56,7 @@ const DetailsPage = () => {
 				numToDisplay: 50,
 				normalize: true,
 			});
+			console.log(res?.data?.data);
 			setMonitor(res?.data?.data ?? {});
 		} catch (error) {
 			logger.error(error);
