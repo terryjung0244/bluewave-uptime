@@ -223,15 +223,22 @@ const getDateRange = (dateRange) => {
  * @returns {Promise<Object>} All checks and date-ranged checks
  */
 const getMonitorChecks = async (monitorId, model, dateRange, sortOrder) => {
+	const indexSpec = {
+		monitorId: 1,
+		createdAt: sortOrder, // This will be 1 or -1
+	};
+
 	const [checksAll, checksForDateRange] = await Promise.all([
-		model.find({ monitorId }).sort({ createdAt: sortOrder }),
+		model.find({ monitorId }).sort({ createdAt: sortOrder }).hint(indexSpec).lean(),
 		model
 			.find({
 				monitorId,
 				createdAt: { $gte: dateRange.start, $lte: dateRange.end },
 			})
-			.sort({ createdAt: sortOrder }),
+			.hint(indexSpec)
+			.lean(),
 	]);
+
 	return { checksAll, checksForDateRange };
 };
 
