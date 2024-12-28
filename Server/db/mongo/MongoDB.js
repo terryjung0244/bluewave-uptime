@@ -91,6 +91,13 @@ class MongoDB {
 				appSettings = new AppSettings({});
 				await appSettings.save();
 			}
+			// Sync indexes
+			const models = mongoose.modelNames();
+			for (const modelName of models) {
+				const model = mongoose.model(modelName);
+				await model.syncIndexes();
+			}
+
 			logger.info({ message: "Connected to MongoDB" });
 		} catch (error) {
 			logger.error({
