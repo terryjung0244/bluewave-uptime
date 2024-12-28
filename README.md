@@ -98,14 +98,21 @@ Here's how you can contribute:
 5. Check for good-first-issue's if you are a newcomer.
 6. Make a pull request to add new features/make quality-of-life improvements/fix bugs.
 
-<!-- <a href="https://github.com/bluewave-labs/checkmate/graphs/contributors">
+<a href="https://github.com/bluewave-labs/checkmate/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=bluewave-labs/checkmate" />
 </a>
 
-Made with [contrib.rocks](https://contrib.rocks).
--->
+## Core maintainers
+
+- [Alex Holliday](https://github.com/ajhollid) (BE+FE)
+- [Shemy Gan](https://github.com/jennifer-gan) (FE)
+- [Caio Marcellus](https://github.com/marcelluscaio) (FE)
+
+<!--
 
 ![Alt](https://repobeats.axiom.co/api/embed/c35d999c82dbb31e967427ea4166c14da4172e73.svg "Repobeats analytics image")
+
+--> 
 
 [![Star History Chart](https://api.star-history.com/svg?repos=bluewave-labs/checkmate&type=Date)](https://star-history.com/#bluewave-labs/bluewave-uptime&Date)
 
