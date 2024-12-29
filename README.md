@@ -102,12 +102,6 @@ Here's how you can contribute:
   <img src="https://contrib.rocks/image?repo=bluewave-labs/checkmate" />
 </a>
 
-## Core maintainers
-
-- [Alex Holliday](https://github.com/ajhollid) (BE+FE)
-- [Shemy Gan](https://github.com/jennifer-gan) (FE)
-- [Caio Marcellus](https://github.com/marcelluscaio) (FE)
-
 <!--
 
 ![Alt](https://repobeats.axiom.co/api/embed/c35d999c82dbb31e967427ea4166c14da4172e73.svg "Repobeats analytics image")
