@@ -579,11 +579,6 @@ function Sidebar() {
 											width: "22px",
 											height: "22px",
 										},
-
-										"& svg": {
-											width: "20px",
-											height: "20px",
-										},
 										"& svg path": {
 											stroke: theme.palette.other.icon,
 										},
