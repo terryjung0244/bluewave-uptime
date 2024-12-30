@@ -74,6 +74,19 @@ class MonitorController {
 		}
 	};
 
+	getUptimeDetailsById = async (req, res, next) => {
+		try {
+			const monitor = await this.db.getUptimeDetailsById(req);
+			return res.status(200).json({
+				success: true,
+				msg: successMessages.MONITOR_GET_BY_ID,
+				data: monitor,
+			});
+		} catch (error) {
+			next(handleError(error, SERVICE_NAME, "getMonitorDetailsById"));
+		}
+	};
+
 	/**
 	 * Returns monitor stats for monitor with matching ID
 	 * @async
