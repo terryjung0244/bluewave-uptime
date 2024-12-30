@@ -305,6 +305,184 @@ const calculateGroupStats = (group) => {
 };
 
 /**
+ * Get uptime details by monitor ID
+ * @async
+ * @param {Express.Request} req
+ * @param {Express.Response} res
+ * @returns {Promise<Monitor>}
+ * @throws {Error}
+ */
+const getUptimeDetailsById = async (req) => {
+	try {
+		const { monitorId } = req.params;
+		const monitor = await Monitor.findById(monitorId);
+		if (monitor === null || monitor === undefined) {
+			throw new Error(errorMessages.DB_FIND_MONITOR_BY_ID(monitorId));
+		}
+
+		const { dateRange, normalize } = req.query;
+		const dates = getDateRange(dateRange);
+		const currentTime = new Date();
+
+		// Build pipeline
+		const aggregateResults = await Check.aggregate([
+			{
+				$match: { monitorId: monitor._id },
+			},
+			{
+				$sort: { createdAt: 1 },
+			},
+			{
+				$group: {
+					_id: null,
+					latestCheck: { $last: "$$ROOT" },
+					lastFalseCheck: {
+						$last: {
+							$cond: [{ $eq: ["$status", false] }, "$$ROOT", null],
+						},
+					},
+					firstCheck: { $first: "$$ROOT" },
+					averageResponseTime: { $avg: "$responseTime" },
+					upChecks: {
+						$sum: {
+							$cond: [{ $eq: ["$status", true] }, 1, 0],
+						},
+					},
+					totalChecks: { $sum: 1 },
+				},
+			},
+			{
+				$project: {
+					timeSinceLastCheck: {
+						$subtract: [currentTime, "$latestCheck.createdAt"],
+					},
+					latestResponseTime: "$latestCheck.responseTime",
+					averageResponseTime: "$averageResponseTime",
+					latestStatus: "$latestCheck.status",
+					uptimeDuration: {
+						$cond: [
+							{ $eq: ["$latestCheck.status", false] },
+							0,
+							{
+								$subtract: [
+									currentTime,
+									{
+										$ifNull: ["$lastFalseCheck.createdAt", "$firstCheck.createdAt"],
+									},
+								],
+							},
+						],
+					},
+					uptimeDecimal: {
+						$divide: ["$upChecks", "$totalChecks"],
+					},
+				},
+			},
+		]);
+
+		const formatLookup = {
+			day: "%Y-%m-%d-%H",
+			week: "%Y-%m-%d-%H",
+			month: "%Y-%m-%d",
+		};
+
+		const dateString = formatLookup[dateRange];
+
+		const dateRangeResults = await Check.aggregate([
+			{
+				$match: {
+					monitorId: monitor._id,
+					createdAt: { $gte: dates.start, $lte: dates.end },
+				},
+			},
+			{
+				$group: {
+					_id: null,
+					totalChecks: { $sum: 1 },
+					upChecks: { $sum: { $cond: [{ $eq: ["$status", true] }, 1, 0] } },
+					avgResponseTime: { $avg: "$responseTime" },
+				},
+			},
+			{
+				$addFields: {
+					uptimePercentage: {
+						$multiply: [{ $divide: ["$upChecks", "$totalChecks"] }, 100],
+					},
+				},
+			},
+			{
+				$lookup: {
+					from: "checks",
+					let: { monitorId: monitor._id, start: dates.start, end: dates.end },
+					pipeline: [
+						{
+							$match: {
+								$expr: {
+									$and: [
+										{ $eq: ["$monitorId", "$$monitorId"] },
+										{ $gte: ["$createdAt", "$$start"] },
+										{ $lte: ["$createdAt", "$$end"] },
+									],
+								},
+							},
+						},
+						{
+							$sort: { createdAt: 1 },
+						},
+						{
+							$group: {
+								_id: {
+									$dateToString: {
+										format: dateString,
+										date: "$createdAt",
+									},
+								},
+								upChecks: {
+									$sum: {
+										$cond: [{ $eq: ["$status", true] }, 1, 0],
+									},
+								},
+								totalChecks: { $sum: 1 },
+								avgResponseTime: { $avg: "$responseTime" },
+							},
+						},
+						{
+							$project: {
+								avgResponseTime: 1,
+								groupUptimePercentage: { $divide: ["$upChecks", "$totalChecks"] },
+							},
+						},
+					],
+					as: "groupedResults",
+				},
+			},
+			{
+				$unwind: "$groupedResults",
+			},
+			{
+				$replaceRoot: {
+					newRoot: {
+						$mergeObjects: [
+							"$groupedResults",
+							{ overallUptimePercentage: "$uptimePercentage" },
+						],
+					},
+				},
+			},
+			{
+				$sort: { _id: 1 },
+			},
+		]);
+
+		return { aggregateResults, dateRangeResults };
+	} catch (error) {
+		error.service = SERVICE_NAME;
+		error.method = "getUptimeDetailsById";
+		throw error;
+	}
+};
+
+/**
  * Get stats by monitor ID
  * @async
  * @param {Express.Request} req
@@ -652,6 +830,7 @@ export {
 	getAllMonitorsWithUptimeStats,
 	getMonitorStatsById,
 	getMonitorById,
+	getUptimeDetailsById,
 	getMonitorsAndSummaryByTeamId,
 	getMonitorsByTeamId,
 	createMonitor,
