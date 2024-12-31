@@ -247,11 +247,14 @@ class NetworkService {
 		if (config.dateRange) params.append("dateRange", config.dateRange);
 		if (config.normalize) params.append("normalize", config.normalize);
 
-		return this.axiosInstance.get(`/monitors/uptime/details/${config.monitorId}`, {
-			headers: {
-				Authorization: `Bearer ${config.authToken}`,
-			},
-		});
+		return this.axiosInstance.get(
+			`/monitors/uptime/details/${config.monitorId}?${params.toString()}`,
+			{
+				headers: {
+					Authorization: `Bearer ${config.authToken}`,
+				},
+			}
+		);
 	}
 
 	/**

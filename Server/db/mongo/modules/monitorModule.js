@@ -406,8 +406,9 @@ const getUptimeDetailsById = async (req) => {
 			{
 				$addFields: {
 					uptimePercentage: {
-						$multiply: [{ $divide: ["$upChecks", "$totalChecks"] }, 100],
+						$divide: ["$upChecks", "$totalChecks"],
 					},
+					overallTotalChecks: "$totalChecks",
 				},
 			},
 			{
@@ -448,6 +449,7 @@ const getUptimeDetailsById = async (req) => {
 						},
 						{
 							$project: {
+								totalChecks: 1,
 								avgResponseTime: 1,
 								groupUptimePercentage: { $divide: ["$upChecks", "$totalChecks"] },
 							},
@@ -465,6 +467,7 @@ const getUptimeDetailsById = async (req) => {
 						$mergeObjects: [
 							"$groupedResults",
 							{ overallUptimePercentage: "$uptimePercentage" },
+							{ overallTotalChecks: "$overallTotalChecks" },
 						],
 					},
 				},
@@ -474,7 +477,13 @@ const getUptimeDetailsById = async (req) => {
 			},
 		]);
 
-		return { aggregateResults, dateRangeResults };
+		const monitorStats = {
+			...monitor.toObject(),
+		};
+		monitorStats.aggregateData = aggregateResults[0];
+		monitorStats.dateRangeData = dateRangeResults;
+
+		return monitorStats;
 	} catch (error) {
 		error.service = SERVICE_NAME;
 		error.method = "getUptimeDetailsById";

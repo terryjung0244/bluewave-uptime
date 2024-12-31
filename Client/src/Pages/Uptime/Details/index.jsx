@@ -5,7 +5,6 @@ import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { networkService } from "../../../main";
 import { logger } from "../../../Utils/Logger";
-import { formatDurationRounded, formatDurationSplit } from "../../../Utils/timeUtils";
 import MonitorDetailsAreaChart from "../../../Components/Charts/MonitorDetailsAreaChart";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import SettingsIcon from "../../../assets/icons/settings-bold.svg?react";
@@ -22,7 +21,7 @@ import { DownBarChart, ResponseGaugeChart, UpBarChart } from "./Charts";
 import SkeletonLayout from "./skeleton";
 import "./index.css";
 import useUtils from "../utils";
-import { formatDateWithTz } from "../../../Utils/timeUtils";
+import { formatDateWithTz, formatDurationSplit } from "../../../Utils/timeUtils";
 import { useIsAdmin } from "../../../Hooks/useIsAdmin";
 import IconBox from "../../../Components/IconBox";
 import StatBox from "../../../Components/StatBox";
@@ -47,13 +46,10 @@ const DetailsPage = () => {
 
 	const fetchMonitor = useCallback(async () => {
 		try {
-			const res = await networkService.getStatsByMonitorId({
+			const res = await networkService.getUptimeDetailsById({
 				authToken: authToken,
 				monitorId: monitorId,
-				sortOrder: null,
-				limit: null,
 				dateRange: dateRange,
-				numToDisplay: 50,
 				normalize: true,
 			});
 			console.log(res?.data?.data);
@@ -185,7 +181,7 @@ const DetailsPage = () => {
 											},
 										}}
 									>
-										Checking every {formatDurationRounded(monitor?.interval)}.
+										{/* Checking every {formatDurationRounded(monitor?.interval)}. */}
 									</Typography>
 								</Stack>
 							</Box>
@@ -224,17 +220,17 @@ const DetailsPage = () => {
 							<StatBox
 								sx={statusStyles[determineState(monitor)]}
 								heading={"active for"}
-								subHeading={splitDuration(monitor?.uptimeDuration)}
+								subHeading={splitDuration(monitor?.aggregateData?.uptimeDuration)}
 							/>
 							<StatBox
 								heading="last check"
-								subHeading={splitDuration(monitor?.lastChecked)}
+								subHeading={splitDuration(monitor?.aggregateData?.timeSinceLastCheck)}
 							/>
 							<StatBox
 								heading="last response time"
 								subHeading={
 									<>
-										{monitor?.latestResponseTime}
+										{monitor?.aggregateData?.latestResponseTime}
 										<Typography component="span">{"ms"}</Typography>
 									</>
 								}
@@ -311,7 +307,7 @@ const DetailsPage = () => {
 											<Typography component="span">
 												{hoveredUptimeData !== null
 													? hoveredUptimeData.totalChecks
-													: monitor?.periodTotalChecks}
+													: monitor.dateRangeData[0].overallTotalChecks}
 											</Typography>
 											{hoveredUptimeData !== null && hoveredUptimeData.time !== null && (
 												<Typography
@@ -333,14 +329,16 @@ const DetailsPage = () => {
 											<Typography>Uptime Percentage</Typography>
 											<Typography component="span">
 												{hoveredUptimeData !== null
-													? Math.floor(hoveredUptimeData.uptimePercentage * 10) / 10
-													: Math.floor(monitor?.periodUptime * 10) / 10}
+													? Math.floor(hoveredUptimeData.groupUptimePercentage * 100)
+													: Math.floor(
+															monitor?.dateRangeData[0].overallUptimePercentage * 100
+														)}
 												<Typography component="span">%</Typography>
 											</Typography>
 										</Box>
 									</Stack>
 									<UpBarChart
-										data={monitor?.aggregateData}
+										data={monitor?.dateRangeData}
 										type={dateRange}
 										onBarHover={setHoveredUptimeData}
 									/>
@@ -376,11 +374,11 @@ const DetailsPage = () => {
 												</Typography>
 											)}
 									</Box>
-									<DownBarChart
+									{/* <DownBarChart
 										data={monitor?.aggregateData}
 										type={dateRange}
 										onBarHover={setHoveredIncidentsData}
-									/>
+									/> */}
 								</ChartBox>
 								<ChartBox justifyContent="space-between">
 									<Stack>
@@ -389,9 +387,9 @@ const DetailsPage = () => {
 										</IconBox>
 										<Typography component="h2">Average Response Time</Typography>
 									</Stack>
-									<ResponseGaugeChart
+									{/* <ResponseGaugeChart
 										data={[{ response: monitor?.periodAvgResponseTime }]}
-									/>
+									/> */}
 								</ChartBox>
 								<ChartBox sx={{ padding: 0 }}>
 									<Stack
@@ -403,7 +401,7 @@ const DetailsPage = () => {
 										</IconBox>
 										<Typography component="h2">Response Times</Typography>
 									</Stack>
-									<MonitorDetailsAreaChart checks={[...monitor.checks].reverse()} />
+									{/* <MonitorDetailsAreaChart checks={[...monitor.checks].reverse()} /> */}
 								</ChartBox>
 								<ChartBox
 									gap={theme.spacing(8)}

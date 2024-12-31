@@ -11,11 +11,11 @@ import {
 } from "recharts";
 import { memo, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { formatDateWithTz } from "../../../../Utils/timeUtils";
+import { formatDateWithTz, toTimeStamp } from "../../../../Utils/timeUtils";
 
 const CustomLabels = ({ x, width, height, firstDataPoint, lastDataPoint, type }) => {
 	const uiTimezone = useSelector((state) => state.ui.timezone);
-	const dateFormat = type === "day" ? "MMM D, h:mm A" : "MMM D";
+	const dateFormat = type === "day" ? "MMM D, h A" : "MMM D";
 
 	return (
 		<>
@@ -26,7 +26,11 @@ const CustomLabels = ({ x, width, height, firstDataPoint, lastDataPoint, type })
 				textAnchor="start"
 				fontSize={11}
 			>
-				{formatDateWithTz(new Date(firstDataPoint.time), dateFormat, uiTimezone)}
+				{formatDateWithTz(
+					toTimeStamp(firstDataPoint._id, "YYYY-MM-DD-HH"),
+					dateFormat,
+					uiTimezone
+				)}
 			</text>
 			<text
 				x={width}
@@ -35,7 +39,8 @@ const CustomLabels = ({ x, width, height, firstDataPoint, lastDataPoint, type })
 				textAnchor="end"
 				fontSize={11}
 			>
-				{formatDateWithTz(new Date(lastDataPoint.time), dateFormat, uiTimezone)}
+				{lastDataPoint._id}
+				{/* {formatDateWithTz(new Date(lastDataPoint.time), dateFormat, uiTimezone)} */}
 			</text>
 		</>
 	);
@@ -57,9 +62,9 @@ const UpBarChart = memo(({ data, type, onBarHover }) => {
 	const [hoveredBarIndex, setHoveredBarIndex] = useState(null);
 
 	const getColorRange = (uptime) => {
-		return uptime > 80
+		return uptime > 0.8
 			? { main: theme.palette.success.main, light: theme.palette.success.light }
-			: uptime > 50
+			: uptime > 0.5
 				? { main: theme.palette.warning.main, light: theme.palette.warning.light }
 				: { main: theme.palette.error.contrastText, light: theme.palette.error.light };
 	};
@@ -79,7 +84,7 @@ const UpBarChart = memo(({ data, type, onBarHover }) => {
 				data={reversedData}
 				onMouseEnter={() => {
 					setChartHovered(true);
-					onBarHover({ time: null, totalChecks: 0, uptimePercentage: 0 });
+					onBarHover({ time: null, totalChecks: 0, groupUptimePercentage: 0 });
 				}}
 				onMouseLeave={() => {
 					setChartHovered(false);
@@ -104,12 +109,12 @@ const UpBarChart = memo(({ data, type, onBarHover }) => {
 					}
 				/>
 				<Bar
-					dataKey="totalChecks"
+					dataKey="avgResponseTime"
 					maxBarSize={7}
 					background={{ fill: "transparent" }}
 				>
 					{reversedData.map((entry, index) => {
-						let { main, light } = getColorRange(entry.uptimePercentage);
+						let { main, light } = getColorRange(entry.groupUptimePercentage);
 						return (
 							<Cell
 								key={`cell-${entry.time}`}
@@ -123,7 +128,7 @@ const UpBarChart = memo(({ data, type, onBarHover }) => {
 									onBarHover({
 										time: null,
 										totalChecks: 0,
-										uptimePercentage: 0,
+										groupUptimePercentage: 0,
 									});
 								}}
 							/>
