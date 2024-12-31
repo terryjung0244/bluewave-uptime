@@ -104,6 +104,19 @@ class MonitorController {
 		}
 	};
 
+	getHardwareDetailsById = async (req, res, next) => {
+		try {
+			const monitor = await this.db.getHardwareDetailsById(req);
+			return res.status(200).json({
+				success: true,
+				msg: successMessages.MONITOR_GET_BY_ID,
+				data: monitor,
+			});
+		} catch (error) {
+			next(handleError(error, SERVICE_NAME, "getHardwareDetailsById"));
+		}
+	};
+
 	getMonitorCertificate = async (req, res, next, fetchMonitorCertificate) => {
 		try {
 			await getCertificateParamValidation.validateAsync(req.params);
