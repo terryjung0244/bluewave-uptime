@@ -76,8 +76,9 @@ export const formatDurationSplit = (ms) => {
 };
 
 export const toTimeStamp = (date, format) => {
-	const dayJsDate = dayjs(date, format);
-	return dayJsDate.valueOf();
+	const dayJsDate = dayjs.utc(date, format);
+	const timestamp = dayJsDate.valueOf();
+	return timestamp;
 };
 
 export const formatDate = (date, customOptions) => {
