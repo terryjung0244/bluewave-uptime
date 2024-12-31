@@ -1,6 +1,6 @@
 <h1>Announcing USD 5K Grant Prize for Distributed Uptime Management Development</h1>
 
-### January 10, 2025, [Checkmate](https://github.com/bluewave-labs/checkmate) & [UpRock](https://uprock.com/)
+### January 9, 2025, [Checkmate](https://github.com/bluewave-labs/checkmate) & [UpRock](https://uprock.com/)
 
 
 **Checkmate** and **UpRock** are excited to announce a USD 5,000 grant prize funding opportunity to support the development of the next-generation distributed uptime manager. UpRock, a DePIN platform with over 2 million devices worldwide, provides the foundation for Checkmate to monitor server uptime from across the globe effectively.
@@ -13,7 +13,7 @@ This grant funding aims to empower developers to contribute innovative solutions
 * **Submission deadline:** January 20, 2025
 * **Announcement of prewinners:** January 25, 2025
 * **Total prize pool:** USD 5,000 (subject to change depending on the quality or number submissions)
-* **Completion timeline:** A maximum of 30 days after selection
+* **Completion timeline:** A maximum of 30 days after pre-selection
 
 ## What we’re looking for
 
