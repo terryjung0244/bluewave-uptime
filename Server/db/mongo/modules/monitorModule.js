@@ -325,60 +325,60 @@ const getUptimeDetailsById = async (req) => {
 		const currentTime = new Date();
 
 		// Build pipeline
-		const aggregateResults = await Check.aggregate([
-			{
-				$match: { monitorId: monitor._id },
-			},
-			{
-				$sort: { createdAt: 1 },
-			},
-			{
-				$group: {
-					_id: null,
-					latestCheck: { $last: "$$ROOT" },
-					lastFalseCheck: {
-						$last: {
-							$cond: [{ $eq: ["$status", false] }, "$$ROOT", null],
-						},
-					},
-					firstCheck: { $first: "$$ROOT" },
-					averageResponseTime: { $avg: "$responseTime" },
-					upChecks: {
-						$sum: {
-							$cond: [{ $eq: ["$status", true] }, 1, 0],
-						},
-					},
-					totalChecks: { $sum: 1 },
-				},
-			},
-			{
-				$project: {
-					timeSinceLastCheck: {
-						$subtract: [currentTime, "$latestCheck.createdAt"],
-					},
-					latestResponseTime: "$latestCheck.responseTime",
-					averageResponseTime: "$averageResponseTime",
-					latestStatus: "$latestCheck.status",
-					uptimeDuration: {
-						$cond: [
-							{ $eq: ["$latestCheck.status", false] },
-							0,
-							{
-								$subtract: [
-									currentTime,
-									{
-										$ifNull: ["$lastFalseCheck.createdAt", "$firstCheck.createdAt"],
-									},
-								],
-							},
-						],
-					},
-					uptimeDecimal: {
-						$divide: ["$upChecks", "$totalChecks"],
-					},
-				},
-			},
-		]);
+		// const aggregateResults = await Check.aggregate([
+		// 	{
+		// 		$match: { monitorId: monitor._id },
+		// 	},
+		// 	{
+		// 		$sort: { createdAt: 1 },
+		// 	},
+		// 	{
+		// 		$group: {
+		// 			_id: null,
+		// 			latestCheck: { $last: "$$ROOT" },
+		// 			lastFalseCheck: {
+		// 				$last: {
+		// 					$cond: [{ $eq: ["$status", false] }, "$$ROOT", null],
+		// 				},
+		// 			},
+		// 			firstCheck: { $first: "$$ROOT" },
+		// 			averageResponseTime: { $avg: "$responseTime" },
+		// 			upChecks: {
+		// 				$sum: {
+		// 					$cond: [{ $eq: ["$status", true] }, 1, 0],
+		// 				},
+		// 			},
+		// 			totalChecks: { $sum: 1 },
+		// 		},
+		// 	},
+		// 	{
+		// 		$project: {
+		// 			timeSinceLastCheck: {
+		// 				$subtract: [currentTime, "$latestCheck.createdAt"],
+		// 			},
+		// 			latestResponseTime: "$latestCheck.responseTime",
+		// 			averageResponseTime: "$averageResponseTime",
+		// 			latestStatus: "$latestCheck.status",
+		// 			uptimeDuration: {
+		// 				$cond: [
+		// 					{ $eq: ["$latestCheck.status", false] },
+		// 					0,
+		// 					{
+		// 						$subtract: [
+		// 							currentTime,
+		// 							{
+		// 								$ifNull: ["$lastFalseCheck.createdAt", "$firstCheck.createdAt"],
+		// 							},
+		// 						],
+		// 					},
+		// 				],
+		// 			},
+		// 			uptimeDecimal: {
+		// 				$divide: ["$upChecks", "$totalChecks"],
+		// 			},
+		// 		},
+		// 	},
+		// ]);
 
 		const formatLookup = {
 			day: "%Y-%m-%d-%H",
@@ -388,29 +388,288 @@ const getUptimeDetailsById = async (req) => {
 
 		const dateString = formatLookup[dateRange];
 
-		const groupedChecks = await Check.aggregate([
+		// const groupedChecks = await Check.aggregate([
+		// 	{
+		// 		$match: {
+		// 			monitorId: monitor._id,
+		// 		},
+		// 	},
+		// 	{
+		// 		$sort: {
+		// 			createdAt: 1,
+		// 		},
+		// 	},
+		// 	{
+		// 		$facet: {
+		// 			aggregateData: [
+		// 				{
+		// 					$group: {
+		// 						_id: null,
+		// 						avgResponseTime: {
+		// 							$avg: "$responseTime",
+		// 						},
+		// 						firstCheck: {
+		// 							$first: "$$ROOT",
+		// 						},
+		// 						lastCheck: {
+		// 							$last: "$$ROOT",
+		// 						},
+		// 					},
+		// 				},
+		// 			],
+		// 			uptimeDuration: [
+		// 				{
+		// 					$match: {
+		// 						status: false,
+		// 					},
+		// 				},
+		// 				{
+		// 					$sort: {
+		// 						createdAt: 1,
+		// 					},
+		// 				},
+		// 				{
+		// 					$group: {
+		// 						_id: null,
+		// 						lastFalseCheck: {
+		// 							$last: "$$ROOT",
+		// 						},
+		// 					},
+		// 				},
+		// 			],
+		// 			upChecksAggregate: [
+		// 				{
+		// 					$match: {
+		// 						status: true,
+		// 						createdAt: { $gte: dates.start, $lte: dates.end },
+		// 					},
+		// 				},
+		// 				{
+		// 					$group: {
+		// 						_id: null,
+		// 						avgResponseTime: {
+		// 							$avg: "$responseTime",
+		// 						},
+		// 						totalChecks: {
+		// 							$sum: 1,
+		// 						},
+		// 					},
+		// 				},
+		// 			],
+		// 			upChecks: [
+		// 				{
+		// 					$match: {
+		// 						status: true,
+		// 						createdAt: { $gte: dates.start, $lte: dates.end },
+		// 					},
+		// 				},
+		// 				{
+		// 					$group: {
+		// 						_id: {
+		// 							$dateToString: {
+		// 								format: dateString,
+		// 								date: "$createdAt",
+		// 							},
+		// 						},
+		// 						totalChecks: {
+		// 							$sum: 1,
+		// 						},
+		// 						avgResponseTime: {
+		// 							$avg: "$responseTime",
+		// 						},
+		// 					},
+		// 				},
+		// 			],
+		// 			downChecksAggregate: [
+		// 				{
+		// 					$match: {
+		// 						status: false,
+		// 						createdAt: { $gte: dates.start, $lte: dates.end },
+		// 					},
+		// 				},
+		// 				{
+		// 					$group: {
+		// 						_id: null,
+		// 						avgResponseTime: {
+		// 							$avg: "$responseTime",
+		// 						},
+		// 						totalChecks: {
+		// 							$sum: 1,
+		// 						},
+		// 					},
+		// 				},
+		// 			],
+		// 			downChecks: [
+		// 				{
+		// 					$match: {
+		// 						status: false,
+		// 						createdAt: { $gte: dates.start, $lte: dates.end },
+		// 					},
+		// 				},
+		// 				{
+		// 					$group: {
+		// 						_id: {
+		// 							$dateToString: {
+		// 								format: dateString,
+		// 								date: "$createdAt",
+		// 							},
+		// 						},
+		// 						totalChecks: {
+		// 							$sum: 1,
+		// 						},
+		// 						avgResponseTime: {
+		// 							$avg: "$responseTime",
+		// 						},
+		// 					},
+		// 				},
+		// 			],
+		// 		},
+		// 	},
+		// 	{
+		// 		$project: {
+		// 			avgResponseTime: {
+		// 				$arrayElemAt: ["$aggregateData.avgResponseTime", 0],
+		// 			},
+		// 			timeSinceLastCheck: {
+		// 				$let: {
+		// 					vars: {
+		// 						lastCheck: {
+		// 							$arrayElemAt: ["$aggregateData.lastCheck", 0],
+		// 						},
+		// 					},
+		// 					in: {
+		// 						$cond: [
+		// 							{
+		// 								$ifNull: ["$$lastCheck", false],
+		// 							},
+		// 							{
+		// 								$subtract: [new Date(), "$$lastCheck.createdAt"],
+		// 							},
+		// 							0,
+		// 						],
+		// 					},
+		// 				},
+		// 			},
+		// 			timeSinceLastFalseCheck: {
+		// 				$let: {
+		// 					vars: {
+		// 						lastFalseCheck: {
+		// 							$arrayElemAt: ["$uptimeDuration.lastFalseCheck", 0],
+		// 						},
+		// 						firstCheck: {
+		// 							$arrayElemAt: ["$aggregateData.firstCheck", 0],
+		// 						},
+		// 					},
+		// 					in: {
+		// 						$cond: [
+		// 							{
+		// 								$ifNull: ["$$lastFalseCheck", false],
+		// 							},
+		// 							{
+		// 								$subtract: [new Date(), "$$lastFalseCheck.createdAt"],
+		// 							},
+		// 							{
+		// 								$cond: [
+		// 									{
+		// 										$ifNull: ["$$firstCheck", false],
+		// 									},
+		// 									{
+		// 										$subtract: [new Date(), "$$firstCheck.createdAt"],
+		// 									},
+		// 									0,
+		// 								],
+		// 							},
+		// 						],
+		// 					},
+		// 				},
+		// 			},
+		// 			upChecksAggregate: {
+		// 				$arrayElemAt: ["$upChecksAggregate", 0],
+		// 			},
+		// 			upChecks: "$upChecks",
+		// 			downChecksAggregate: {
+		// 				$arrayElemAt: ["$downChecksAggregate", 0],
+		// 			},
+		// 			downChecks: "$downChecks",
+		// 		},
+		// 	},
+		// ]);
+
+		const monitorData = await Check.aggregate([
 			{
 				$match: {
 					monitorId: monitor._id,
-					createdAt: { $gte: dates.start, $lte: dates.end },
+				},
+			},
+			{
+				$sort: {
+					createdAt: 1,
 				},
 			},
 			{
 				$facet: {
-					upChecksCount: [
+					aggregateData: [
 						{
-							$match: { status: true },
+							$group: {
+								_id: null,
+								avgResponseTime: {
+									$avg: "$responseTime",
+								},
+								firstCheck: {
+									$first: "$$ROOT",
+								},
+								lastCheck: {
+									$last: "$$ROOT",
+								},
+								totalChecks: {
+									$sum: 1,
+								},
+							},
+						},
+					],
+					uptimeDuration: [
+						{
+							$match: {
+								status: false,
+							},
+						},
+						{
+							$sort: {
+								createdAt: 1,
+							},
 						},
 						{
 							$group: {
 								_id: null,
-								totalChecks: { $sum: 1 },
+								lastFalseCheck: {
+									$last: "$$ROOT",
+								},
+							},
+						},
+					],
+					upChecksAggregate: [
+						{
+							$match: {
+								status: true,
+							},
+						},
+						{
+							$group: {
+								_id: null,
+								avgResponseTime: {
+									$avg: "$responseTime",
+								},
+								totalChecks: {
+									$sum: 1,
+								},
 							},
 						},
 					],
 					upChecks: [
 						{
-							$match: { status: true },
+							$match: {
+								status: true,
+							},
 						},
 						{
 							$group: {
@@ -420,36 +679,38 @@ const getUptimeDetailsById = async (req) => {
 										date: "$createdAt",
 									},
 								},
-								totalChecks: { $sum: 1 },
-								upChecks: { $sum: { $cond: [{ $eq: ["$status", true] }, 1, 0] } },
-								avgResponseTime: { $avg: "$responseTime" },
+								totalChecks: {
+									$sum: 1,
+								},
+								avgResponseTime: {
+									$avg: "$responseTime",
+								},
 							},
-						},
-						{
-							$project: {
-								totalChecks: 1,
-								avgResponseTime: 1,
-								groupUptimePercentage: { $divide: ["$upChecks", "$totalChecks"] },
-							},
-						},
-						{
-							$sort: { _id: 1 },
 						},
 					],
-					downChecksCount: [
+					downChecksAggregate: [
 						{
-							$match: { status: false },
+							$match: {
+								status: false,
+							},
 						},
 						{
 							$group: {
 								_id: null,
-								totalChecks: { $sum: 1 },
+								avgResponseTime: {
+									$avg: "$responseTime",
+								},
+								totalChecks: {
+									$sum: 1,
+								},
 							},
 						},
 					],
 					downChecks: [
 						{
-							$match: { status: false },
+							$match: {
+								status: false,
+							},
 						},
 						{
 							$group: {
@@ -459,36 +720,12 @@ const getUptimeDetailsById = async (req) => {
 										date: "$createdAt",
 									},
 								},
-								totalChecks: { $sum: 1 },
-								downChecks: { $sum: { $cond: [{ $eq: ["$status", false] }, 1, 0] } },
-								avgResponseTime: { $avg: "$responseTime" },
-							},
-						},
-						{
-							$project: {
-								totalChecks: 1,
-								avgResponseTime: 1,
-								groupUptimePercentage: { $divide: ["$downChecks", "$totalChecks"] },
-							},
-						},
-						{
-							$sort: { _id: 1 },
-						},
-					],
-					overall: [
-						{
-							$group: {
-								_id: null,
-								totalChecks: { $sum: 1 },
-								groupAvgResponseTime: { $avg: "$responseTime" },
-								upChecks: { $sum: { $cond: [{ $eq: ["$status", true] }, 1, 0] } },
-							},
-						},
-						{
-							$project: {
-								uptimePercentage: { $divide: ["$upChecks", "$totalChecks"] },
-								totalChecks: 1,
-								groupAvgResponseTime: 1,
+								totalChecks: {
+									$sum: 1,
+								},
+								avgResponseTime: {
+									$avg: "$responseTime",
+								},
 							},
 						},
 					],
@@ -496,60 +733,90 @@ const getUptimeDetailsById = async (req) => {
 			},
 			{
 				$project: {
-					upChecks: {
-						$map: {
-							input: "$upChecks",
-							as: "check",
+					avgResponseTime: {
+						$arrayElemAt: ["$aggregateData.avgResponseTime", 0],
+					},
+					totalChecks: {
+						$arrayElemAt: ["$aggregateData.totalChecks", 0],
+					},
+					timeSinceLastCheck: {
+						$let: {
+							vars: {
+								lastCheck: {
+									$arrayElemAt: ["$aggregateData.lastCheck", 0],
+								},
+							},
 							in: {
-								$mergeObjects: [
-									"$$check",
+								$cond: [
 									{
-										overallUptimePercentage: {
-											$arrayElemAt: ["$overall.uptimePercentage", 0],
-										},
-										overallTotalChecks: { $arrayElemAt: ["$overall.totalChecks", 0] },
-										upChecksCount: {
-											$arrayElemAt: ["$upChecksCount.totalChecks", 0],
-										},
-										groupAvgResponseTime: {
-											$arrayElemAt: ["$overall.groupAvgResponseTime", 0],
-										},
+										$ifNull: ["$$lastCheck", false],
+									},
+									{
+										$subtract: [new Date(), "$$lastCheck.createdAt"],
+									},
+									0,
+								],
+							},
+						},
+					},
+					timeSinceLastFalseCheck: {
+						$let: {
+							vars: {
+								lastFalseCheck: {
+									$arrayElemAt: ["$uptimeDuration.lastFalseCheck", 0],
+								},
+								firstCheck: {
+									$arrayElemAt: ["$aggregateData.firstCheck", 0],
+								},
+							},
+							in: {
+								$cond: [
+									{
+										$ifNull: ["$$lastFalseCheck", false],
+									},
+									{
+										$subtract: [new Date(), "$$lastFalseCheck.createdAt"],
+									},
+									{
+										$cond: [
+											{
+												$ifNull: ["$$firstCheck", false],
+											},
+											{
+												$subtract: [new Date(), "$$firstCheck.createdAt"],
+											},
+											0,
+										],
 									},
 								],
 							},
 						},
 					},
-					downChecks: {
-						$map: {
-							input: "$downChecks",
-							as: "check",
-							in: {
-								$mergeObjects: [
-									"$$check",
-									{
-										overallUptimePercentage: {
-											$arrayElemAt: ["$overall.uptimePercentage", 0],
-										},
-										overallTotalChecks: { $arrayElemAt: ["$overall.totalChecks", 0] },
-										downChecksCount: {
-											$arrayElemAt: ["$downChecksCount.totalChecks", 0],
-										},
-									},
-								],
-							},
-						},
+					upChecksAggregate: {
+						$arrayElemAt: ["$upChecksAggregate", 0],
 					},
+					upChecks: "$upChecks",
+					downChecksAggregate: {
+						$arrayElemAt: ["$downChecksAggregate", 0],
+					},
+					downChecks: "$downChecks",
 				},
 			},
 		]);
 
 		const monitorStats = {
 			...monitor.toObject(),
+			stats: {
+				avgResponseTime: monitorData[0].avgResponseTime,
+				totalChecks: monitorData[0].totalChecks,
+				timeSinceLastCheck: monitorData[0].timeSinceLastCheck,
+				timeSinceLastFalseCheck: monitorData[0].timeSinceLastFalseCheck,
+				upChecksAggregate: monitorData[0].upChecksAggregate,
+				upChecks: monitorData[0].upChecks,
+				downChecksAggregate: monitorData[0].downChecksAggregate,
+				downChecks: monitorData[0].downChecks,
+			},
 		};
-		console.log(groupedChecks);
-		monitorStats.aggregateData = aggregateResults[0];
-		monitorStats.groupUpChecks = groupedChecks[0].upChecks;
-		monitorStats.groupDownChecks = groupedChecks[0].downChecks;
 
 		return monitorStats;
 	} catch (error) {
