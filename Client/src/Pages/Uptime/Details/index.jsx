@@ -25,6 +25,8 @@ import { formatDateWithTz, formatDurationSplit } from "../../../Utils/timeUtils"
 import { useIsAdmin } from "../../../Hooks/useIsAdmin";
 import IconBox from "../../../Components/IconBox";
 import StatBox from "../../../Components/StatBox";
+import { toTimeStamp } from "../../../Utils/timeUtils";
+
 /**
  * Details page component displaying monitor details and related information.
  * @component
@@ -102,6 +104,10 @@ const DetailsPage = () => {
 
 	const [hoveredUptimeData, setHoveredUptimeData] = useState(null);
 	const [hoveredIncidentsData, setHoveredIncidentsData] = useState(null);
+
+	useEffect(() => {
+		console.log(hoveredUptimeData);
+	}, [hoveredUptimeData]);
 
 	const BREADCRUMBS = [
 		{ name: "uptime", path: "/uptime" },
@@ -307,7 +313,7 @@ const DetailsPage = () => {
 											<Typography component="span">
 												{hoveredUptimeData !== null
 													? hoveredUptimeData.totalChecks
-													: monitor.dateRangeData[0].overallTotalChecks}
+													: (monitor.groupUpChecks[0]?.overallTotalChecks ?? 0)}
 											</Typography>
 											{hoveredUptimeData !== null && hoveredUptimeData.time !== null && (
 												<Typography
@@ -318,7 +324,10 @@ const DetailsPage = () => {
 													color={theme.palette.text.tertiary}
 												>
 													{formatDateWithTz(
-														hoveredUptimeData.time,
+														toTimeStamp(
+															hoveredUptimeData._id,
+															dateRange === "month" ? "YYYY-MM-DD" : "YYYY-MM-DD-HH"
+														),
 														dateFormat,
 														uiTimezone
 													)}
@@ -331,14 +340,15 @@ const DetailsPage = () => {
 												{hoveredUptimeData !== null
 													? Math.floor(hoveredUptimeData.groupUptimePercentage * 100)
 													: Math.floor(
-															monitor?.dateRangeData[0].overallUptimePercentage * 100
+															monitor?.groupUpChecks[0]?.overallUptimePercentage ??
+																0 * 100
 														)}
 												<Typography component="span">%</Typography>
 											</Typography>
 										</Box>
 									</Stack>
 									<UpBarChart
-										data={monitor?.dateRangeData}
+										data={monitor?.groupUpChecks}
 										type={dateRange}
 										onBarHover={setHoveredUptimeData}
 									/>
@@ -354,8 +364,8 @@ const DetailsPage = () => {
 										<Typography>Total Incidents</Typography>
 										<Typography component="span">
 											{hoveredIncidentsData !== null
-												? hoveredIncidentsData.totalIncidents
-												: monitor?.periodIncidents}
+												? hoveredIncidentsData.totalChecks
+												: (monitor.groupDownChecks[0]?.overallTotalChecks ?? 0)}
 										</Typography>
 										{hoveredIncidentsData !== null &&
 											hoveredIncidentsData.time !== null && (
@@ -367,18 +377,21 @@ const DetailsPage = () => {
 													color={theme.palette.text.tertiary}
 												>
 													{formatDateWithTz(
-														hoveredIncidentsData.time,
+														toTimeStamp(
+															hoveredIncidentsData._id,
+															dateRange === "month" ? "YYYY-MM-DD" : "YYYY-MM-DD-HH"
+														),
 														dateFormat,
 														uiTimezone
 													)}
 												</Typography>
 											)}
 									</Box>
-									{/* <DownBarChart
-										data={monitor?.aggregateData}
+									<DownBarChart
+										data={monitor?.groupDownChecks}
 										type={dateRange}
 										onBarHover={setHoveredIncidentsData}
-									/> */}
+									/>
 								</ChartBox>
 								<ChartBox justifyContent="space-between">
 									<Stack>
@@ -422,10 +435,10 @@ const DetailsPage = () => {
 											History
 										</Typography>
 									</Stack>
-									<PaginationTable
+									{/* <PaginationTable
 										monitorId={monitorId}
 										dateRange={dateRange}
-									/>
+									/> */}
 								</ChartBox>
 							</Stack>
 						</Box>

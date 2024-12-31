@@ -15,7 +15,8 @@ import { formatDateWithTz, toTimeStamp } from "../../../../Utils/timeUtils";
 
 const CustomLabels = ({ x, width, height, firstDataPoint, lastDataPoint, type }) => {
 	const uiTimezone = useSelector((state) => state.ui.timezone);
-	const dateFormat = type === "day" ? "MMM D, h A" : "MMM D";
+	const formatString = type === "month" ? "YYYY-MM-DD" : "YYYY-MM-DD-HH";
+	const dateFormat = type === "day" ? "MMM D, h:mm A" : "MMM D";
 
 	return (
 		<>
@@ -27,7 +28,7 @@ const CustomLabels = ({ x, width, height, firstDataPoint, lastDataPoint, type })
 				fontSize={11}
 			>
 				{formatDateWithTz(
-					toTimeStamp(firstDataPoint._id, "YYYY-MM-DD-HH"),
+					toTimeStamp(firstDataPoint._id, formatString),
 					dateFormat,
 					uiTimezone
 				)}
@@ -39,8 +40,11 @@ const CustomLabels = ({ x, width, height, firstDataPoint, lastDataPoint, type })
 				textAnchor="end"
 				fontSize={11}
 			>
-				{lastDataPoint._id}
-				{/* {formatDateWithTz(new Date(lastDataPoint.time), dateFormat, uiTimezone)} */}
+				{formatDateWithTz(
+					toTimeStamp(lastDataPoint._id, formatString),
+					dateFormat,
+					uiTimezone
+				)}
 			</text>
 		</>
 	);
@@ -70,7 +74,6 @@ const UpBarChart = memo(({ data, type, onBarHover }) => {
 	};
 
 	// TODO - REMOVE THIS LATER
-	const reversedData = useMemo(() => [...data].reverse(), [data]);
 
 	return (
 		<ResponsiveContainer
@@ -81,7 +84,7 @@ const UpBarChart = memo(({ data, type, onBarHover }) => {
 			<BarChart
 				width="100%"
 				height="100%"
-				data={reversedData}
+				data={data}
 				onMouseEnter={() => {
 					setChartHovered(true);
 					onBarHover({ time: null, totalChecks: 0, groupUptimePercentage: 0 });
@@ -102,8 +105,8 @@ const UpBarChart = memo(({ data, type, onBarHover }) => {
 							y={0}
 							width="100%"
 							height="100%"
-							firstDataPoint={reversedData[0]}
-							lastDataPoint={reversedData[reversedData.length - 1]}
+							firstDataPoint={data[0]}
+							lastDataPoint={data[data.length - 1]}
 							type={type}
 						/>
 					}
@@ -113,7 +116,7 @@ const UpBarChart = memo(({ data, type, onBarHover }) => {
 					maxBarSize={7}
 					background={{ fill: "transparent" }}
 				>
-					{reversedData.map((entry, index) => {
+					{data.map((entry, index) => {
 						let { main, light } = getColorRange(entry.groupUptimePercentage);
 						return (
 							<Cell
@@ -157,9 +160,6 @@ const DownBarChart = memo(({ data, type, onBarHover }) => {
 	const [chartHovered, setChartHovered] = useState(false);
 	const [hoveredBarIndex, setHoveredBarIndex] = useState(null);
 
-	// TODO - REMOVE THIS LATER
-	const reversedData = useMemo(() => [...data].reverse(), [data]);
-
 	return (
 		<ResponsiveContainer
 			width="100%"
@@ -169,10 +169,10 @@ const DownBarChart = memo(({ data, type, onBarHover }) => {
 			<BarChart
 				width="100%"
 				height="100%"
-				data={reversedData}
+				data={data}
 				onMouseEnter={() => {
 					setChartHovered(true);
-					onBarHover({ time: null, totalIncidents: 0 });
+					onBarHover({ time: null, totalChecks: 0 });
 				}}
 				onMouseLeave={() => {
 					setChartHovered(false);
@@ -190,18 +190,18 @@ const DownBarChart = memo(({ data, type, onBarHover }) => {
 							y={0}
 							width="100%"
 							height="100%"
-							firstDataPoint={reversedData[0]}
-							lastDataPoint={reversedData[reversedData.length - 1]}
+							firstDataPoint={data[0]}
+							lastDataPoint={data[data.length - 1]}
 							type={type}
 						/>
 					}
 				/>
 				<Bar
-					dataKey="totalIncidents"
+					dataKey="avgResponseTime"
 					maxBarSize={7}
 					background={{ fill: "transparent" }}
 				>
-					{reversedData.map((entry, index) => (
+					{data.map((entry, index) => (
 						<Cell
 							key={`cell-${entry.time}`}
 							fill={
@@ -209,7 +209,7 @@ const DownBarChart = memo(({ data, type, onBarHover }) => {
 									? theme.palette.error.contrastText
 									: chartHovered
 										? theme.palette.error.light
-										: theme.palette.error.contrastText
+										: theme.palette.error.main
 							}
 							onMouseEnter={() => {
 								setHoveredBarIndex(index);
@@ -217,7 +217,7 @@ const DownBarChart = memo(({ data, type, onBarHover }) => {
 							}}
 							onMouseLeave={() => {
 								setHoveredBarIndex(null);
-								onBarHover({ time: null, totalIncidents: 0 });
+								onBarHover({ time: null, totalChecks: 0 });
 							}}
 						/>
 					))}
