@@ -400,9 +400,9 @@ const DetailsPage = () => {
 										</IconBox>
 										<Typography component="h2">Average Response Time</Typography>
 									</Stack>
-									{/* <ResponseGaugeChart
-										data={[{ response: monitor?.periodAvgResponseTime }]}
-									/> */}
+									<ResponseGaugeChart
+										avgResponseTime={monitor?.aggregateData?.averageResponseTime ?? 0}
+									/>
 								</ChartBox>
 								<ChartBox sx={{ padding: 0 }}>
 									<Stack

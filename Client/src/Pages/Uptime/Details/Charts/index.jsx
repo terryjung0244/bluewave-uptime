@@ -190,8 +190,8 @@ const DownBarChart = memo(({ data, type, onBarHover }) => {
 							y={0}
 							width="100%"
 							height="100%"
-							firstDataPoint={data[0]}
-							lastDataPoint={data[data.length - 1]}
+							firstDataPoint={data?.[0] ?? {}}
+							lastDataPoint={data?.[data.length - 1] ?? {}}
 							type={type}
 						/>
 					}
@@ -235,17 +235,16 @@ DownBarChart.propTypes = {
 };
 export { DownBarChart };
 
-const ResponseGaugeChart = ({ data }) => {
+const ResponseGaugeChart = ({ avgResponseTime }) => {
 	const theme = useTheme();
 
 	let max = 1000; // max ms
 
-	const memoizedData = useMemo(
-		() => [{ response: max, fill: "transparent", background: false }, ...data],
-		[data[0].response]
-	);
-
-	let responseTime = Math.floor(memoizedData[1].response);
+	const data = [
+		{ response: max, fill: "transparent", background: false },
+		{ response: avgResponseTime, background: true },
+	];
+	let responseTime = Math.floor(avgResponseTime);
 	let responseProps =
 		responseTime <= 200
 			? {
@@ -267,8 +266,8 @@ const ResponseGaugeChart = ({ data }) => {
 						}
 					: {
 							category: "Poor",
-							main: theme.palette.error.light,
-							bg: theme.palette.error.dark,
+							main: theme.palette.error.main,
+							bg: theme.palette.error.light,
 						};
 
 	return (
@@ -281,7 +280,7 @@ const ResponseGaugeChart = ({ data }) => {
 				width="100%"
 				height="100%"
 				cy="89%"
-				data={memoizedData}
+				data={data}
 				startAngle={180}
 				endAngle={0}
 				innerRadius={100}
