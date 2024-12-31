@@ -313,7 +313,7 @@ const DetailsPage = () => {
 											<Typography component="span">
 												{hoveredUptimeData !== null
 													? hoveredUptimeData.totalChecks
-													: (monitor.groupUpChecks[0]?.overallTotalChecks ?? 0)}
+													: (monitor.groupUpChecks[0]?.upChecksCount ?? 0)}
 											</Typography>
 											{hoveredUptimeData !== null && hoveredUptimeData.time !== null && (
 												<Typography
@@ -340,8 +340,8 @@ const DetailsPage = () => {
 												{hoveredUptimeData !== null
 													? Math.floor(hoveredUptimeData.groupUptimePercentage * 100)
 													: Math.floor(
-															monitor?.groupUpChecks[0]?.overallUptimePercentage ??
-																0 * 100
+															(monitor?.groupUpChecks[0]?.overallUptimePercentage ?? 0) *
+																100
 														)}
 												<Typography component="span">%</Typography>
 											</Typography>
@@ -365,7 +365,7 @@ const DetailsPage = () => {
 										<Typography component="span">
 											{hoveredIncidentsData !== null
 												? hoveredIncidentsData.totalChecks
-												: (monitor.groupDownChecks[0]?.overallTotalChecks ?? 0)}
+												: (monitor.groupDownChecks[0]?.downChecksCount ?? 0)}
 										</Typography>
 										{hoveredIncidentsData !== null &&
 											hoveredIncidentsData.time !== null && (

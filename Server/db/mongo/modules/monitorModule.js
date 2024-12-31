@@ -388,49 +388,29 @@ const getUptimeDetailsById = async (req) => {
 
 		const dateString = formatLookup[dateRange];
 
-		const groupUpChecks = await Check.aggregate([
+		const groupedChecks = await Check.aggregate([
 			{
 				$match: {
 					monitorId: monitor._id,
 					createdAt: { $gte: dates.start, $lte: dates.end },
-					status: true,
 				},
 			},
 			{
-				$group: {
-					_id: null,
-					totalChecks: { $sum: 1 },
-					upChecks: { $sum: { $cond: [{ $eq: ["$status", true] }, 1, 0] } },
-					avgResponseTime: { $avg: "$responseTime" },
-				},
-			},
-			{
-				$addFields: {
-					uptimePercentage: {
-						$divide: ["$upChecks", "$totalChecks"],
-					},
-					overallTotalChecks: "$totalChecks",
-				},
-			},
-			{
-				$lookup: {
-					from: "checks",
-					let: { monitorId: monitor._id, start: dates.start, end: dates.end },
-					pipeline: [
+				$facet: {
+					upChecksCount: [
 						{
-							$match: {
-								status: true,
-								$expr: {
-									$and: [
-										{ $eq: ["$monitorId", "$$monitorId"] },
-										{ $gte: ["$createdAt", "$$start"] },
-										{ $lte: ["$createdAt", "$$end"] },
-									],
-								},
-							},
+							$match: { status: true },
 						},
 						{
-							$sort: { createdAt: 1 },
+							$group: {
+								_id: null,
+								totalChecks: { $sum: 1 },
+							},
+						},
+					],
+					upChecks: [
+						{
+							$match: { status: true },
 						},
 						{
 							$group: {
@@ -440,12 +420,8 @@ const getUptimeDetailsById = async (req) => {
 										date: "$createdAt",
 									},
 								},
-								upChecks: {
-									$sum: {
-										$cond: [{ $eq: ["$status", true] }, 1, 0],
-									},
-								},
 								totalChecks: { $sum: 1 },
+								upChecks: { $sum: { $cond: [{ $eq: ["$status", true] }, 1, 0] } },
 								avgResponseTime: { $avg: "$responseTime" },
 							},
 						},
@@ -456,72 +432,24 @@ const getUptimeDetailsById = async (req) => {
 								groupUptimePercentage: { $divide: ["$upChecks", "$totalChecks"] },
 							},
 						},
-					],
-					as: "groupedResults",
-				},
-			},
-			{
-				$unwind: "$groupedResults",
-			},
-			{
-				$replaceRoot: {
-					newRoot: {
-						$mergeObjects: [
-							"$groupedResults",
-							{ overallUptimePercentage: "$uptimePercentage" },
-							{ overallTotalChecks: "$overallTotalChecks" },
-						],
-					},
-				},
-			},
-			{
-				$sort: { _id: 1 },
-			},
-		]);
-
-		const groupDownChecks = await Check.aggregate([
-			{
-				$match: {
-					monitorId: monitor._id,
-					createdAt: { $gte: dates.start, $lte: dates.end },
-					status: false,
-				},
-			},
-			{
-				$group: {
-					_id: null,
-					totalChecks: { $sum: 1 },
-					upChecks: { $sum: { $cond: [{ $eq: ["$status", true] }, 1, 0] } },
-					avgResponseTime: { $avg: "$responseTime" },
-				},
-			},
-			{
-				$addFields: {
-					uptimePercentage: {
-						$divide: ["$upChecks", "$totalChecks"],
-					},
-					overallTotalChecks: "$totalChecks",
-				},
-			},
-			{
-				$lookup: {
-					from: "checks",
-					let: { monitorId: monitor._id, start: dates.start, end: dates.end },
-					pipeline: [
 						{
-							$match: {
-								status: false,
-								$expr: {
-									$and: [
-										{ $eq: ["$monitorId", "$$monitorId"] },
-										{ $gte: ["$createdAt", "$$start"] },
-										{ $lte: ["$createdAt", "$$end"] },
-									],
-								},
-							},
+							$sort: { _id: 1 },
+						},
+					],
+					downChecksCount: [
+						{
+							$match: { status: false },
 						},
 						{
-							$sort: { createdAt: 1 },
+							$group: {
+								_id: null,
+								totalChecks: { $sum: 1 },
+							},
+						},
+					],
+					downChecks: [
+						{
+							$match: { status: false },
 						},
 						{
 							$group: {
@@ -531,12 +459,8 @@ const getUptimeDetailsById = async (req) => {
 										date: "$createdAt",
 									},
 								},
-								upChecks: {
-									$sum: {
-										$cond: [{ $eq: ["$status", true] }, 1, 0],
-									},
-								},
 								totalChecks: { $sum: 1 },
+								downChecks: { $sum: { $cond: [{ $eq: ["$status", false] }, 1, 0] } },
 								avgResponseTime: { $avg: "$responseTime" },
 							},
 						},
@@ -544,38 +468,88 @@ const getUptimeDetailsById = async (req) => {
 							$project: {
 								totalChecks: 1,
 								avgResponseTime: 1,
-								groupUptimePercentage: { $divide: ["$upChecks", "$totalChecks"] },
+								groupUptimePercentage: { $divide: ["$downChecks", "$totalChecks"] },
+							},
+						},
+						{
+							$sort: { _id: 1 },
+						},
+					],
+					overall: [
+						{
+							$group: {
+								_id: null,
+								totalChecks: { $sum: 1 },
+								groupAvgResponseTime: { $avg: "$responseTime" },
+								upChecks: { $sum: { $cond: [{ $eq: ["$status", true] }, 1, 0] } },
+							},
+						},
+						{
+							$project: {
+								uptimePercentage: { $divide: ["$upChecks", "$totalChecks"] },
+								totalChecks: 1,
+								groupAvgResponseTime: 1,
 							},
 						},
 					],
-					as: "groupedResults",
 				},
 			},
 			{
-				$unwind: "$groupedResults",
-			},
-			{
-				$replaceRoot: {
-					newRoot: {
-						$mergeObjects: [
-							"$groupedResults",
-							{ overallUptimePercentage: "$uptimePercentage" },
-							{ overallTotalChecks: "$overallTotalChecks" },
-						],
+				$project: {
+					upChecks: {
+						$map: {
+							input: "$upChecks",
+							as: "check",
+							in: {
+								$mergeObjects: [
+									"$$check",
+									{
+										overallUptimePercentage: {
+											$arrayElemAt: ["$overall.uptimePercentage", 0],
+										},
+										overallTotalChecks: { $arrayElemAt: ["$overall.totalChecks", 0] },
+										upChecksCount: {
+											$arrayElemAt: ["$upChecksCount.totalChecks", 0],
+										},
+										groupAvgResponseTime: {
+											$arrayElemAt: ["$overall.groupAvgResponseTime", 0],
+										},
+									},
+								],
+							},
+						},
+					},
+					downChecks: {
+						$map: {
+							input: "$downChecks",
+							as: "check",
+							in: {
+								$mergeObjects: [
+									"$$check",
+									{
+										overallUptimePercentage: {
+											$arrayElemAt: ["$overall.uptimePercentage", 0],
+										},
+										overallTotalChecks: { $arrayElemAt: ["$overall.totalChecks", 0] },
+										downChecksCount: {
+											$arrayElemAt: ["$downChecksCount.totalChecks", 0],
+										},
+									},
+								],
+							},
+						},
 					},
 				},
-			},
-			{
-				$sort: { _id: 1 },
 			},
 		]);
 
 		const monitorStats = {
 			...monitor.toObject(),
 		};
+		console.log(groupedChecks);
 		monitorStats.aggregateData = aggregateResults[0];
-		monitorStats.groupUpChecks = groupUpChecks;
-		monitorStats.groupDownChecks = groupDownChecks;
+		monitorStats.groupUpChecks = groupedChecks[0].upChecks;
+		monitorStats.groupDownChecks = groupedChecks[0].downChecks;
 
 		return monitorStats;
 	} catch (error) {
