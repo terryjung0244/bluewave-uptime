@@ -12,12 +12,12 @@ import { Box, Stack, Typography } from "@mui/material";
 import { useTheme } from "@emotion/react";
 import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { formatDateWithTz } from "../../../Utils/timeUtils";
+import { formatDateWithTz, toTimeStamp } from "../../../Utils/timeUtils";
 import "./index.css";
 
 const CustomToolTip = ({ active, payload, label }) => {
 	const uiTimezone = useSelector((state) => state.ui.timezone);
-
+	const dateFormat = label?.length === 10 ? "YYYY-MM-DD" : "YYYY-MM-DD-HH";
 	const theme = useTheme();
 	if (active && payload && payload.length) {
 		return (
@@ -39,7 +39,11 @@ const CustomToolTip = ({ active, payload, label }) => {
 						fontWeight: 500,
 					}}
 				>
-					{formatDateWithTz(label, "ddd, MMMM D, YYYY, h:mm A", uiTimezone)}
+					{formatDateWithTz(
+						toTimeStamp(label, dateFormat),
+						"ddd, MMMM D, YYYY, h:mm A",
+						uiTimezone
+					)}
 				</Typography>
 				<Box mt={theme.spacing(1)}>
 					<Box
@@ -69,7 +73,7 @@ const CustomToolTip = ({ active, payload, label }) => {
 							Response Time
 						</Typography>{" "}
 						<Typography component="span">
-							{payload[0].payload.originalResponseTime}
+							{Math.floor(payload[0].payload.originalAvgResponseTime)}
 							<Typography
 								component="span"
 								sx={{ opacity: 0.8 }}
@@ -87,11 +91,24 @@ const CustomToolTip = ({ active, payload, label }) => {
 	return null;
 };
 
+CustomToolTip.propTypes = {
+	active: PropTypes.bool,
+	payload: PropTypes.arrayOf(
+		PropTypes.shape({
+			payload: PropTypes.shape({
+				_id: PropTypes.string.isRequired, // Add this line to validate _id
+				originalResponseTime: PropTypes.number.isRequired,
+			}).isRequired,
+		})
+	),
+	label: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+};
+
 const CustomTick = ({ x, y, payload, index }) => {
 	const theme = useTheme();
 
 	const uiTimezone = useSelector((state) => state.ui.timezone);
-
+	const dateFormat = payload?.value.length === 10 ? "YYYY-MM-DD" : "YYYY-MM-DD-HH";
 	// Render nothing for the first tick
 	if (index === 0) return null;
 	return (
@@ -103,7 +120,7 @@ const CustomTick = ({ x, y, payload, index }) => {
 			fontSize={11}
 			fontWeight={400}
 		>
-			{formatDateWithTz(payload?.value, "h:mm a", uiTimezone)}
+			{formatDateWithTz(toTimeStamp(payload?.value, dateFormat), "h:mm a", uiTimezone)}
 		</Text>
 	);
 };
@@ -168,7 +185,7 @@ const MonitorDetailsAreaChart = ({ checks }) => {
 				</defs>
 				<XAxis
 					stroke={theme.palette.border.dark}
-					dataKey="createdAt"
+					dataKey="_id"
 					tick={<CustomTick />}
 					minTickGap={0}
 					axisLine={false}
@@ -183,7 +200,7 @@ const MonitorDetailsAreaChart = ({ checks }) => {
 				/>
 				<Area
 					type="monotone"
-					dataKey="responseTime"
+					dataKey="avgResponseTime"
 					stroke={theme.palette.primary.main}
 					fill="url(#colorUv)"
 					strokeWidth={isHovered ? 2.5 : 1.5}
@@ -203,7 +220,7 @@ CustomToolTip.propTypes = {
 	payload: PropTypes.arrayOf(
 		PropTypes.shape({
 			payload: PropTypes.shape({
-				originalResponseTime: PropTypes.number.isRequired,
+				originalAvgResponseTime: PropTypes.number,
 			}).isRequired,
 		})
 	),

@@ -17,7 +17,6 @@ import PaginationTable from "./PaginationTable";
 import Breadcrumbs from "../../../Components/Breadcrumbs";
 import PulseDot from "../../../Components/Animated/PulseDot";
 import { ChartBox } from "./styled";
-import { DownBarChart, ResponseGaugeChart, UpBarChart } from "./Charts";
 import SkeletonLayout from "./skeleton";
 import "./index.css";
 import useUtils from "../utils";
@@ -26,7 +25,9 @@ import { useIsAdmin } from "../../../Hooks/useIsAdmin";
 import IconBox from "../../../Components/IconBox";
 import StatBox from "../../../Components/StatBox";
 import { toTimeStamp } from "../../../Utils/timeUtils";
-
+import UpBarChart from "./Charts/UpBarChart";
+import DownBarChart from "./Charts/DownBarChart";
+import ResponseGaugeChart from "./Charts/ResponseGaugeChart";
 /**
  * Details page component displaying monitor details and related information.
  * @component
@@ -54,7 +55,6 @@ const DetailsPage = () => {
 				dateRange: dateRange,
 				normalize: true,
 			});
-			console.log(res?.data?.data);
 			setMonitor(res?.data?.data ?? {});
 		} catch (error) {
 			logger.error(error);
@@ -104,10 +104,6 @@ const DetailsPage = () => {
 
 	const [hoveredUptimeData, setHoveredUptimeData] = useState(null);
 	const [hoveredIncidentsData, setHoveredIncidentsData] = useState(null);
-
-	useEffect(() => {
-		console.log(hoveredUptimeData);
-	}, [hoveredUptimeData]);
 
 	const BREADCRUMBS = [
 		{ name: "uptime", path: "/uptime" },
@@ -226,17 +222,17 @@ const DetailsPage = () => {
 							<StatBox
 								sx={statusStyles[determineState(monitor)]}
 								heading={"active for"}
-								subHeading={splitDuration(monitor?.aggregateData?.uptimeDuration)}
+								subHeading={splitDuration(monitor?.stats?.timeSinceLastFalseCheck)}
 							/>
 							<StatBox
 								heading="last check"
-								subHeading={splitDuration(monitor?.aggregateData?.timeSinceLastCheck)}
+								subHeading={splitDuration(monitor?.stats?.timeSinceLastCheck)}
 							/>
 							<StatBox
 								heading="last response time"
 								subHeading={
 									<>
-										{monitor?.aggregateData?.latestResponseTime}
+										{monitor?.stats?.latestResponseTime}
 										<Typography component="span">{"ms"}</Typography>
 									</>
 								}
@@ -313,7 +309,7 @@ const DetailsPage = () => {
 											<Typography component="span">
 												{hoveredUptimeData !== null
 													? hoveredUptimeData.totalChecks
-													: (monitor.groupUpChecks[0]?.upChecksCount ?? 0)}
+													: (monitor.stats?.totalChecks ?? 0)}
 											</Typography>
 											{hoveredUptimeData !== null && hoveredUptimeData.time !== null && (
 												<Typography
@@ -335,20 +331,27 @@ const DetailsPage = () => {
 											)}
 										</Box>
 										<Box>
-											<Typography>Uptime Percentage</Typography>
+											<Typography>
+												{hoveredUptimeData !== null
+													? "Avg Response Time"
+													: "Uptime Percentage"}
+											</Typography>
 											<Typography component="span">
 												{hoveredUptimeData !== null
-													? Math.floor(hoveredUptimeData.groupUptimePercentage * 100)
+													? Math.floor(hoveredUptimeData?.avgResponseTime ?? 0)
 													: Math.floor(
-															(monitor?.groupUpChecks[0]?.overallUptimePercentage ?? 0) *
+															((monitor?.stats?.upChecksAggregate.totalChecks ?? 0) /
+																(monitor?.stats?.totalChecks ?? 1)) *
 																100
 														)}
-												<Typography component="span">%</Typography>
+												<Typography component="span">
+													{hoveredUptimeData !== null ? " ms" : " %"}
+												</Typography>
 											</Typography>
 										</Box>
 									</Stack>
 									<UpBarChart
-										data={monitor?.groupUpChecks}
+										stats={monitor?.stats}
 										type={dateRange}
 										onBarHover={setHoveredUptimeData}
 									/>
@@ -365,7 +368,7 @@ const DetailsPage = () => {
 										<Typography component="span">
 											{hoveredIncidentsData !== null
 												? hoveredIncidentsData.totalChecks
-												: (monitor.groupDownChecks[0]?.downChecksCount ?? 0)}
+												: (monitor.stats?.downChecksAggregate.totalChecks ?? 0)}
 										</Typography>
 										{hoveredIncidentsData !== null &&
 											hoveredIncidentsData.time !== null && (
@@ -388,7 +391,7 @@ const DetailsPage = () => {
 											)}
 									</Box>
 									<DownBarChart
-										data={monitor?.groupDownChecks}
+										stats={monitor?.stats}
 										type={dateRange}
 										onBarHover={setHoveredIncidentsData}
 									/>
@@ -401,7 +404,7 @@ const DetailsPage = () => {
 										<Typography component="h2">Average Response Time</Typography>
 									</Stack>
 									<ResponseGaugeChart
-										avgResponseTime={monitor?.aggregateData?.averageResponseTime ?? 0}
+										avgResponseTime={monitor?.stats?.groupAggregate.avgResponseTime ?? 0}
 									/>
 								</ChartBox>
 								<ChartBox sx={{ padding: 0 }}>
@@ -414,7 +417,7 @@ const DetailsPage = () => {
 										</IconBox>
 										<Typography component="h2">Response Times</Typography>
 									</Stack>
-									{/* <MonitorDetailsAreaChart checks={[...monitor.checks].reverse()} /> */}
+									<MonitorDetailsAreaChart checks={monitor?.stats?.groupChecks ?? []} />
 								</ChartBox>
 								<ChartBox
 									gap={theme.spacing(8)}
@@ -435,10 +438,10 @@ const DetailsPage = () => {
 											History
 										</Typography>
 									</Stack>
-									{/* <PaginationTable
+									<PaginationTable
 										monitorId={monitorId}
 										dateRange={dateRange}
-									/> */}
+									/>
 								</ChartBox>
 							</Stack>
 						</Box>
