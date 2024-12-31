@@ -4,7 +4,7 @@ import PageSpeedCheck from "../../models/PageSpeedCheck.js";
 import HardwareCheck from "../../models/HardwareCheck.js";
 import { errorMessages } from "../../../utils/messages.js";
 import Notification from "../../models/Notification.js";
-import { NormalizeData } from "../../../utils/dataUtils.js";
+import { NormalizeData, NormalizeDataUptimeDetails } from "../../../utils/dataUtils.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -647,6 +647,49 @@ const getUptimeDetailsById = async (req) => {
 							},
 						},
 					],
+					groupChecks: [
+						{
+							$match: {
+								createdAt: { $gte: dates.start, $lte: dates.end },
+							},
+						},
+						{
+							$group: {
+								_id: {
+									$dateToString: {
+										format: dateString,
+										date: "$createdAt",
+									},
+								},
+								avgResponseTime: {
+									$avg: "$responseTime",
+								},
+								totalChecks: {
+									$sum: 1,
+								},
+							},
+						},
+						{
+							$sort: {
+								_id: 1,
+							},
+						},
+					],
+					groupAggregate: [
+						{
+							$match: {
+								createdAt: { $gte: dates.start, $lte: dates.end },
+							},
+						},
+						{
+							$group: {
+								_id: null,
+								avgResponseTime: {
+									$avg: "$responseTime",
+								},
+							},
+						},
+					],
 					upChecksAggregate: [
 						{
 							$match: {
@@ -686,6 +729,9 @@ const getUptimeDetailsById = async (req) => {
 									$avg: "$responseTime",
 								},
 							},
+						},
+						{
+							$sort: { _id: 1 },
 						},
 					],
 					downChecksAggregate: [
@@ -728,6 +774,9 @@ const getUptimeDetailsById = async (req) => {
 								},
 							},
 						},
+						{
+							$sort: { _id: 1 },
+						},
 					],
 				},
 			},
@@ -738,6 +787,9 @@ const getUptimeDetailsById = async (req) => {
 					},
 					totalChecks: {
 						$arrayElemAt: ["$aggregateData.totalChecks", 0],
+					},
+					latestResponseTime: {
+						$arrayElemAt: ["$aggregateData.lastCheck.responseTime", 0],
 					},
 					timeSinceLastCheck: {
 						$let: {
@@ -792,6 +844,10 @@ const getUptimeDetailsById = async (req) => {
 							},
 						},
 					},
+					groupChecks: "$groupChecks",
+					groupAggregate: {
+						$arrayElemAt: ["$groupAggregate", 0],
+					},
 					upChecksAggregate: {
 						$arrayElemAt: ["$upChecksAggregate", 0],
 					},
@@ -804,6 +860,12 @@ const getUptimeDetailsById = async (req) => {
 			},
 		]);
 
+		const normalizedGroupChecks = NormalizeDataUptimeDetails(
+			monitorData[0].groupChecks,
+			10,
+			100
+		);
+
 		const monitorStats = {
 			...monitor.toObject(),
 			stats: {
@@ -811,6 +873,9 @@ const getUptimeDetailsById = async (req) => {
 				totalChecks: monitorData[0].totalChecks,
 				timeSinceLastCheck: monitorData[0].timeSinceLastCheck,
 				timeSinceLastFalseCheck: monitorData[0].timeSinceLastFalseCheck,
+				latestResponseTime: monitorData[0].latestResponseTime,
+				groupChecks: normalizedGroupChecks,
+				groupAggregate: monitorData[0].groupAggregate,
 				upChecksAggregate: monitorData[0].upChecksAggregate,
 				upChecks: monitorData[0].upChecks,
 				downChecksAggregate: monitorData[0].downChecksAggregate,
