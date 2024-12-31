@@ -373,6 +373,30 @@ const getMonitorStatsById = async (req) => {
 	}
 };
 
+const getHardwareDetailsById = async (req) => {
+	try {
+		const { monitorId } = req.params;
+		const monitor = await Monitor.findById(monitorId);
+
+		const hardwareStats = await HardwareCheck.aggregate([
+			{
+				$match: {
+					monitorId: monitor._id,
+				},
+			},
+			{
+				$facet: [],
+			},
+		]);
+
+		return hardwareStats;
+	} catch (error) {
+		error.service = SERVICE_NAME;
+		error.method = "getHardwareDetailsById";
+		throw error;
+	}
+};
+
 /**
  * Get a monitor by ID
  * @async
@@ -660,6 +684,7 @@ export {
 	deleteMonitorsByUserId,
 	editMonitor,
 	addDemoMonitors,
+	getHardwareDetailsById,
 };
 
 // Helper functions
