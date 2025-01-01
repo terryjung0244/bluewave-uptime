@@ -206,7 +206,7 @@ const InfrastructureDetails = () => {
 	];
 	const [monitor, setMonitor] = useState(null);
 	const { authToken } = useSelector((state) => state.auth);
-	const [dateRange, setDateRange] = useState("all");
+	const [dateRange, setDateRange] = useState("day");
 	const { statusColor, statusStyles, determineState } = useUtils();
 	// These calculations are needed because ResponsiveContainer
 	// doesn't take padding of parent/siblings into account
@@ -514,7 +514,8 @@ const InfrastructureDetails = () => {
 	);
 	const gaugeBoxConfigs = buildGaugeBoxConfigs(monitor?.stats ?? {});
 	const areaChartConfigs = buildAreaChartConfigs(monitor?.stats?.checks ?? []);
-
+	const lastChecked =
+		Date.now() - new Date(monitor?.stats?.aggregateData?.latestCheck?.createdAt);
 	return (
 		<Box>
 			<Breadcrumbs list={navList} />
@@ -544,8 +545,8 @@ const InfrastructureDetails = () => {
 							Checking every {formatDurationRounded(monitor?.interval)}
 						</Typography>
 						<Typography alignSelf="end">
-							Last checked {formatDurationSplit(monitor?.lastChecked).time}{" "}
-							{formatDurationSplit(monitor?.lastChecked).format} ago
+							Last checked {formatDurationSplit(lastChecked).time}{" "}
+							{formatDurationSplit(lastChecked).format} ago
 						</Typography>
 					</Stack>
 
