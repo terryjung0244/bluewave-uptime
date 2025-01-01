@@ -322,7 +322,7 @@ const getUptimeDetailsById = async (req) => {
 
 		const { dateRange, normalize } = req.query;
 		const dates = getDateRange(dateRange);
-
+		console.log(dates);
 		const formatLookup = {
 			day: "%Y-%m-%d-%H",
 			week: "%Y-%m-%d-%H",
@@ -447,6 +447,7 @@ const getUptimeDetailsById = async (req) => {
 						{
 							$match: {
 								status: true,
+								createdAt: { $gte: dates.start, $lte: dates.end },
 							},
 						},
 						{
@@ -491,6 +492,7 @@ const getUptimeDetailsById = async (req) => {
 						{
 							$match: {
 								status: false,
+								createdAt: { $gte: dates.start, $lte: dates.end },
 							},
 						},
 						{
