@@ -4,7 +4,9 @@
 
 **If you would like to support us, please consider giving it a ⭐, and think about contributing or providing feedback.**
 
-![Frame 34](https://github.com/user-attachments/assets/4bf57845-3f47-4759-835b-285a5486191d)
+<img width="1259" alt="Frame 34" src="https://github.com/user-attachments/assets/d491a734-fd7a-4841-9f84-fb5bef5ad586" />
+
+
 
 
 ![](https://img.shields.io/github/license/bluewave-labs/checkmate)
