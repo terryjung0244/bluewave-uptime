@@ -376,19 +376,223 @@ const getMonitorStatsById = async (req) => {
 const getHardwareDetailsById = async (req) => {
 	try {
 		const { monitorId } = req.params;
+		const { dateRange } = req.query;
 		const monitor = await Monitor.findById(monitorId);
+		const dates = getDateRange(dateRange);
+		console.log(dates);
 
 		const hardwareStats = await HardwareCheck.aggregate([
 			{
 				$match: {
 					monitorId: monitor._id,
+					createdAt: { $gte: dates.start, $lte: dates.end },
 				},
 			},
 			{
-				$facet: [],
+				$sort: {
+					createdAt: 1,
+				},
+			},
+			{
+				$facet: {
+					aggregateData: [
+						{
+							$group: {
+								_id: null,
+								latestCheck: {
+									$last: "$$ROOT",
+								},
+								totalChecks: {
+									$sum: 1,
+								},
+							},
+						},
+					],
+					upChecks: [
+						{
+							$match: {
+								status: true,
+							},
+						},
+						{
+							$group: {
+								_id: null,
+								totalChecks: {
+									$sum: 1,
+								},
+							},
+						},
+					],
+					checks: [
+						{
+							$limit: 1,
+						},
+						{
+							$project: {
+								diskCount: {
+									$size: "$disk",
+								},
+							},
+						},
+						{
+							$lookup: {
+								from: "hardwarechecks",
+								let: {
+									diskCount: "$diskCount",
+								},
+								pipeline: [
+									{
+										$match: {
+											$expr: {
+												$eq: ["$monitorId", monitor._id],
+											},
+										},
+									},
+									{
+										$group: {
+											_id: {
+												$dateToString: {
+													format: "%Y-%m-%d-%H",
+													date: "$createdAt",
+												},
+											},
+											avgCpuUsage: {
+												$avg: "$cpu.usage_percent",
+											},
+											avgMemoryUsage: {
+												$avg: "$memory.usage_percent",
+											},
+											avgTemperature: {
+												$avg: "$cpu.temperature",
+											},
+											disks: {
+												$push: "$disk",
+											},
+										},
+									},
+									{
+										$project: {
+											_id: 1,
+											avgCpuUsage: 1,
+											avgMemoryUsage: 1,
+											avgTemperature: 1,
+											disks: {
+												$map: {
+													input: {
+														$range: [0, "$$diskCount"],
+													},
+													as: "diskIndex",
+													in: {
+														name: {
+															$concat: [
+																"disk",
+																{
+																	$toString: "$$diskIndex",
+																},
+															],
+														},
+														readSpeed: {
+															$avg: {
+																$map: {
+																	input: "$disks",
+																	as: "diskArray",
+																	in: {
+																		$arrayElemAt: [
+																			"$$diskArray.read_speed_bytes",
+																			"$$diskIndex",
+																		],
+																	},
+																},
+															},
+														},
+														writeSpeed: {
+															$avg: {
+																$map: {
+																	input: "$disks",
+																	as: "diskArray",
+																	in: {
+																		$arrayElemAt: [
+																			"$$diskArray.write_speed_bytes",
+																			"$$diskIndex",
+																		],
+																	},
+																},
+															},
+														},
+														totalBytes: {
+															$avg: {
+																$map: {
+																	input: "$disks",
+																	as: "diskArray",
+																	in: {
+																		$arrayElemAt: [
+																			"$$diskArray.total_bytes",
+																			"$$diskIndex",
+																		],
+																	},
+																},
+															},
+														},
+														freeBytes: {
+															$avg: {
+																$map: {
+																	input: "$disks",
+																	as: "diskArray",
+																	in: {
+																		$arrayElemAt: [
+																			"$$diskArray.free_bytes",
+																			"$$diskIndex",
+																		],
+																	},
+																},
+															},
+														},
+														usagePercent: {
+															$avg: {
+																$map: {
+																	input: "$disks",
+																	as: "diskArray",
+																	in: {
+																		$arrayElemAt: [
+																			"$$diskArray.usage_percent",
+																			"$$diskIndex",
+																		],
+																	},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								],
+								as: "hourlyStats",
+							},
+						},
+						{
+							$unwind: "$hourlyStats",
+						},
+						{
+							$replaceRoot: {
+								newRoot: "$hourlyStats",
+							},
+						},
+					],
+				},
+			},
+			{
+				$project: {
+					aggregateData: {
+						$arrayElemAt: ["$aggregateData", 0],
+					},
+					upChecks: {
+						$arrayElemAt: ["$upChecks", 0],
+					},
+					checks: "$checks",
+				},
 			},
 		]);
-
 		return hardwareStats;
 	} catch (error) {
 		error.service = SERVICE_NAME;
