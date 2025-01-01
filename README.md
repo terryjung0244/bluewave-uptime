@@ -55,20 +55,21 @@ If you have any questions, suggestions or comments, please use our [Discord chan
 - Infrastructure monitoring (memory, disk usage, CPU performance etc) - requires [Capture](https://github.com/bluewave-labs/capture)
 - Docker monitoring
 - Ping monitoring
+- SSL monitoring
 - Incidents at a glance
 - E-mail notifications
 - Scheduled maintenance
-- Can monitor 1000+ servers at the same time on a moderate server
 
 **Short term roadmap:**
 
-- Global (distributed) uptime checking on Solana network
-- Status pages
-- Better notification options (think Discord, Telegram, Slack)
+- Port monitoring (**complete**, waiting to be deployed to stable version)
+- Global (distributed) uptime checking on Solana network (**in progress**)
+- Status pages (**in progress**)
+- Better notification options (Webhooks, Discord, Telegram, Slack)
 - More configuration options
+- Translations
+- Tagging/grouping monitors
 - DNS monitoring
-- SSL monitoring
-- Port monitoring
 
 ## 🏗️ Screenshots
 
