@@ -386,8 +386,12 @@ const getHardwareDetailsById = async (req) => {
 		const { dateRange } = req.query;
 		const monitor = await Monitor.findById(monitorId);
 		const dates = getDateRange(dateRange);
-		console.log(dates);
-
+		const formatLookup = {
+			day: "%Y-%m-%dT%H:00:00Z",
+			week: "%Y-%m-%dT%H:00:00Z",
+			month: "%Y-%m-%dT00:00:00Z",
+		};
+		const dateString = formatLookup[dateRange];
 		const hardwareStats = await HardwareCheck.aggregate([
 			{
 				$match: {
@@ -451,7 +455,11 @@ const getHardwareDetailsById = async (req) => {
 									{
 										$match: {
 											$expr: {
-												$eq: ["$monitorId", monitor._id],
+												$and: [
+													{ $eq: ["$monitorId", monitor._id] },
+													{ $gte: ["$createdAt", dates.start] },
+													{ $lte: ["$createdAt", dates.end] },
+												],
 											},
 										},
 									},
@@ -459,7 +467,7 @@ const getHardwareDetailsById = async (req) => {
 										$group: {
 											_id: {
 												$dateToString: {
-													format: "%Y-%m-%d-%H",
+													format: dateString,
 													date: "$createdAt",
 												},
 											},
@@ -469,8 +477,10 @@ const getHardwareDetailsById = async (req) => {
 											avgMemoryUsage: {
 												$avg: "$memory.usage_percent",
 											},
-											avgTemperature: {
-												$avg: "$cpu.temperature",
+											avgTemperatures: {
+												$push: {
+													$ifNull: ["$cpu.temperature", [0]],
+												},
 											},
 											disks: {
 												$push: "$disk",
@@ -482,7 +492,39 @@ const getHardwareDetailsById = async (req) => {
 											_id: 1,
 											avgCpuUsage: 1,
 											avgMemoryUsage: 1,
-											avgTemperature: 1,
+											avgTemperature: {
+												$map: {
+													input: {
+														$range: [
+															0,
+															{
+																$size: {
+																	// Handle null temperatures array
+																	$ifNull: [
+																		{ $arrayElemAt: ["$avgTemperatures", 0] },
+																		[0], // Default to single-element array if null
+																	],
+																},
+															},
+														],
+													},
+													as: "index",
+													in: {
+														$avg: {
+															$map: {
+																input: "$avgTemperatures",
+																as: "tempArray",
+																in: {
+																	$ifNull: [
+																		{ $arrayElemAt: ["$$tempArray", "$$index"] },
+																		0, // Default to 0 if element is null
+																	],
+																},
+															},
+														},
+													},
+												},
+											},
 											disks: {
 												$map: {
 													input: {
@@ -596,11 +638,21 @@ const getHardwareDetailsById = async (req) => {
 					upChecks: {
 						$arrayElemAt: ["$upChecks", 0],
 					},
-					checks: "$checks",
+					checks: {
+						$sortArray: {
+							input: "$checks",
+							sortBy: { _id: 1 },
+						},
+					},
 				},
 			},
 		]);
-		return hardwareStats;
+
+		const monitorStats = {
+			...monitor.toObject(),
+			stats: hardwareStats[0],
+		};
+		return monitorStats;
 	} catch (error) {
 		error.service = SERVICE_NAME;
 		error.method = "getHardwareDetailsById";
