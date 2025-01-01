@@ -14,7 +14,7 @@ const UpBarChart = memo(({ stats, type, onBarHover }) => {
 			? { main: theme.palette.success.main, light: theme.palette.success.light }
 			: responseTime < 300
 				? { main: theme.palette.warning.main, light: theme.palette.warning.light }
-				: { main: theme.palette.error.contrastText, light: theme.palette.error.light };
+				: { main: theme.palette.error.main, light: theme.palette.error.light };
 	};
 
 	return (
