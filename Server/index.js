@@ -68,6 +68,8 @@ import ServiceRegistry from "./service/serviceRegistry.js";
 
 import MongoDB from "./db/mongo/MongoDB.js";
 
+import IORedis from "ioredis";
+
 const SERVICE_NAME = "Server";
 const SHUTDOWN_TIMEOUT = 1000;
 let isShuttingDown = false;
@@ -87,12 +89,24 @@ const shutdown = async () => {
 	}
 	isShuttingDown = true;
 	logger.info({ message: "Attempting graceful shutdown" });
-	setTimeout(() => {
+	setTimeout(async () => {
 		logger.error({
 			message: "Could not shut down in time, forcing shutdown",
 			service: SERVICE_NAME,
 			method: "shutdown",
 		});
+		// flush Redis
+		const settings =
+			ServiceRegistry.get(SettingsService.SERVICE_NAME).getSettings() || {};
+
+		const { redisHost = "127.0.0.1", redisPort = 6379 } = settings;
+		const redis = new IORedis({
+			host: redisHost,
+			port: redisPort,
+		});
+		logger.info({ message: "Flushing Redis" });
+		await redis.flushall();
+		logger.info({ message: "Redis flushed" });
 		process.exit(1);
 	}, SHUTDOWN_TIMEOUT);
 	try {
@@ -133,10 +147,11 @@ const startApp = async () => {
 	const networkService = new NetworkService(axios, ping, logger, http, Docker, net);
 	const statusService = new StatusService(db, logger);
 	const notificationService = new NotificationService(emailService, db, logger);
-	const jobQueue = await JobQueue.createJobQueue(
+
+	const jobQueue = new JobQueue(
 		db,
-		networkService,
 		statusService,
+		networkService,
 		notificationService,
 		settingsService,
 		logger,
@@ -212,6 +227,8 @@ const startApp = async () => {
 	);
 	const queueRoutes = new QueueRoutes(queueController);
 	const statusPageRoutes = new StatusPageRoutes(statusPageController);
+	// Init job queue
+	await jobQueue.initJobQueue();
 	// Middleware
 	app.use(
 		cors()
