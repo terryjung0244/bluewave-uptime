@@ -221,7 +221,7 @@ const InfrastructureDetails = () => {
 
 	const buildStatBoxes = (stats, uptime) => {
 		if (Object.keys(stats).length === 0) return [];
-		let latestCheck = stats.aggregateData.latestCheck ?? null;
+		let latestCheck = stats?.aggregateData?.latestCheck ?? null;
 		if (latestCheck === null) return [];
 
 		// Extract values from latest check
@@ -317,7 +317,7 @@ const InfrastructureDetails = () => {
 	const buildGaugeBoxConfigs = (stats) => {
 		if (Object.keys(stats).length === 0) return [];
 
-		let latestCheck = stats.aggregateData.latestCheck ?? null;
+		let latestCheck = stats?.aggregateData?.latestCheck ?? null;
 		if (latestCheck === null) return [];
 
 		// Extract values from latest check
