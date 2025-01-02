@@ -58,11 +58,20 @@ class NewJobQueue {
 	 */
 	async initJobQueue() {
 		const monitors = await this.db.getAllMonitors();
-		for (const monitor of monitors) {
-			if (monitor.isActive) {
-				await this.addJob(monitor.type, monitor);
-			}
-		}
+		await Promise.all(
+			monitors
+				.filter((monitor) => monitor.isActive)
+				.map(async (monitor) => {
+					try {
+						console.log(`Adding job for monitor: ${monitor._id} (${monitor.type})`);
+						await this.addJob(monitor._id, monitor);
+						console.log(`Successfully added job for monitor: ${monitor._id}`);
+					} catch (error) {
+						console.error(`Failed to add job for monitor ${monitor._id}:`, error);
+						// Don't throw here to allow other jobs to continue
+					}
+				})
+		);
 	}
 
 	/**
@@ -334,11 +343,11 @@ class NewJobQueue {
 	 * Adds both immediate and repeatable jobs to the appropriate queue
 	 * @async
 	 * @param {string} jobName - Name identifier for the job
-	 * @param {Object} payload - Job data and configuration
-	 * @param {string} payload.type - Type of monitor/queue ('uptime', 'pagespeed', 'hardware')
-	 * @param {string} [payload.url] - URL to monitor (optional)
-	 * @param {number} [payload.interval=60000] - Repeat interval in milliseconds
-	 * @param {string} payload._id - Monitor ID
+	 * @param {Object} monitor - Job data and configuration
+	 * @param {string} monitor.type - Type of monitor/queue ('uptime', 'pagespeed', 'hardware')
+	 * @param {string} [monitor.url] - URL to monitor (optional)
+	 * @param {number} [monitor.interval=60000] - Repeat interval in milliseconds
+	 * @param {string} monitor._id - Monitor ID
 	 * @throws {Error} If queue not found for payload type
 	 * @throws {Error} If job addition fails
 	 * @description
@@ -349,15 +358,15 @@ class NewJobQueue {
 	 * Jobs are configured with exponential backoff, single attempt,
 	 * and automatic removal on completion
 	 */
-	async addJob(jobName, payload) {
+	async addJob(jobName, monitor) {
 		try {
-			this.logger.info({ message: `Adding job ${payload?.url ?? "No URL"}` });
+			this.logger.info({ message: `Adding job ${monitor?.url ?? "No URL"}` });
 
 			// Find the correct queue
 
-			const queue = this.queues[QUEUE_LOOKUP[payload.type]];
+			const queue = this.queues[QUEUE_LOOKUP[monitor.type]];
 			if (queue === undefined) {
-				throw new Error(`Queue for ${payload.type} not found`);
+				throw new Error(`Queue for ${monitor.type} not found`);
 			}
 
 			// build job options
@@ -373,11 +382,11 @@ class NewJobQueue {
 			};
 
 			// Execute job immediately
-			await queue.add(jobName, payload, jobOptions);
-			await queue.add(jobName, payload, {
+			await queue.add(jobName, monitor, jobOptions);
+			await queue.add(jobName, monitor, {
 				...jobOptions,
 				repeat: {
-					every: payload?.interval ?? 60000,
+					every: monitor?.interval ?? 60000,
 					immediately: false,
 				},
 			});
