@@ -20,6 +20,9 @@ const CustomToolTip = ({ active, payload, label }) => {
 	const dateFormat = label?.length === 10 ? "YYYY-MM-DD" : "YYYY-MM-DD-HH";
 	const theme = useTheme();
 	if (active && payload && payload.length) {
+		const responseTime = payload[0]?.payload?.originalAvgResponseTime
+			? payload[0]?.payload?.originalAvgResponseTime
+			: (payload[0]?.payload?.avgResponseTime ?? 0);
 		return (
 			<Box
 				className="area-tooltip"
@@ -73,7 +76,7 @@ const CustomToolTip = ({ active, payload, label }) => {
 							Response Time
 						</Typography>{" "}
 						<Typography component="span">
-							{Math.floor(payload[0].payload.originalAvgResponseTime)}
+							{Math.floor(responseTime)}
 							<Typography
 								component="span"
 								sx={{ opacity: 0.8 }}
@@ -95,15 +98,16 @@ CustomToolTip.propTypes = {
 	active: PropTypes.bool,
 	payload: PropTypes.arrayOf(
 		PropTypes.shape({
+			value: PropTypes.number,
 			payload: PropTypes.shape({
-				_id: PropTypes.string.isRequired, // Add this line to validate _id
-				originalResponseTime: PropTypes.number.isRequired,
-			}).isRequired,
+				_id: PropTypes.string,
+				avgResponseTime: PropTypes.number,
+				originalAvgResponseTime: PropTypes.number,
+			}),
 		})
 	),
 	label: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
-
 const CustomTick = ({ x, y, payload, index }) => {
 	const theme = useTheme();
 
@@ -215,15 +219,4 @@ MonitorDetailsAreaChart.propTypes = {
 	checks: PropTypes.array,
 };
 
-CustomToolTip.propTypes = {
-	active: PropTypes.bool,
-	payload: PropTypes.arrayOf(
-		PropTypes.shape({
-			payload: PropTypes.shape({
-				originalAvgResponseTime: PropTypes.number,
-			}).isRequired,
-		})
-	),
-	label: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-};
 export default MonitorDetailsAreaChart;
