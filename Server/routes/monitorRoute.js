@@ -17,6 +17,10 @@ class MonitorRoutes {
 			"/hardware/details/:monitorId",
 			this.monitorController.getHardwareDetailsById
 		);
+		this.router.get(
+			"/uptime/details/:monitorId",
+			this.monitorController.getUptimeDetailsById
+		);
 		this.router.get("/certificate/:monitorId", (req, res, next) => {
 			this.monitorController.getMonitorCertificate(
 				req,
