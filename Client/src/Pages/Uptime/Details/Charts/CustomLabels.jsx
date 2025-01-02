@@ -1,10 +1,9 @@
 import PropTypes from "prop-types";
 import { useSelector } from "react-redux";
-import { formatDateWithTz, toTimeStamp } from "../../../../Utils/timeUtils";
+import { formatDateWithTz } from "../../../../Utils/timeUtils";
 
 const CustomLabels = ({ x, width, height, firstDataPoint, lastDataPoint, type }) => {
 	const uiTimezone = useSelector((state) => state.ui.timezone);
-	const formatString = type === "month" ? "YYYY-MM-DD" : "YYYY-MM-DD-HH";
 	const dateFormat = type === "day" ? "MMM D, h:mm A" : "MMM D";
 
 	return (
@@ -16,11 +15,7 @@ const CustomLabels = ({ x, width, height, firstDataPoint, lastDataPoint, type })
 				textAnchor="start"
 				fontSize={11}
 			>
-				{formatDateWithTz(
-					toTimeStamp(firstDataPoint._id, formatString),
-					dateFormat,
-					uiTimezone
-				)}
+				{formatDateWithTz(firstDataPoint._id, dateFormat, uiTimezone)}
 			</text>
 			<text
 				x={width}
@@ -29,11 +24,7 @@ const CustomLabels = ({ x, width, height, firstDataPoint, lastDataPoint, type })
 				textAnchor="end"
 				fontSize={11}
 			>
-				{formatDateWithTz(
-					toTimeStamp(lastDataPoint._id, formatString),
-					dateFormat,
-					uiTimezone
-				)}
+				{formatDateWithTz(lastDataPoint._id, dateFormat, uiTimezone)}
 			</text>
 		</>
 	);

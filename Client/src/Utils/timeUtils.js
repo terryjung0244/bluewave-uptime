@@ -75,12 +75,6 @@ export const formatDurationSplit = (ms) => {
 					: { time: 0, format: "seconds" };
 };
 
-export const toTimeStamp = (date, format) => {
-	const dayJsDate = dayjs.utc(date, format);
-	const timestamp = dayJsDate.valueOf();
-	return timestamp;
-};
-
 export const formatDate = (date, customOptions) => {
 	const options = {
 		year: "numeric",

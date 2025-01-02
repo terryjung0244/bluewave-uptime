@@ -12,12 +12,11 @@ import { Box, Stack, Typography } from "@mui/material";
 import { useTheme } from "@emotion/react";
 import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { formatDateWithTz, toTimeStamp } from "../../../Utils/timeUtils";
+import { formatDateWithTz } from "../../../Utils/timeUtils";
 import "./index.css";
 
 const CustomToolTip = ({ active, payload, label }) => {
 	const uiTimezone = useSelector((state) => state.ui.timezone);
-	const dateFormat = label?.length === 10 ? "YYYY-MM-DD" : "YYYY-MM-DD-HH";
 	const theme = useTheme();
 	if (active && payload && payload.length) {
 		const responseTime = payload[0]?.payload?.originalAvgResponseTime
@@ -42,11 +41,7 @@ const CustomToolTip = ({ active, payload, label }) => {
 						fontWeight: 500,
 					}}
 				>
-					{formatDateWithTz(
-						toTimeStamp(label, dateFormat),
-						"ddd, MMMM D, YYYY, h:mm A",
-						uiTimezone
-					)}
+					{formatDateWithTz(label, "ddd, MMMM D, YYYY, h:mm A", uiTimezone)}
 				</Typography>
 				<Box mt={theme.spacing(1)}>
 					<Box
@@ -112,7 +107,6 @@ const CustomTick = ({ x, y, payload, index }) => {
 	const theme = useTheme();
 
 	const uiTimezone = useSelector((state) => state.ui.timezone);
-	const dateFormat = payload?.value.length === 10 ? "YYYY-MM-DD" : "YYYY-MM-DD-HH";
 	// Render nothing for the first tick
 	if (index === 0) return null;
 	return (
@@ -124,7 +118,7 @@ const CustomTick = ({ x, y, payload, index }) => {
 			fontSize={11}
 			fontWeight={400}
 		>
-			{formatDateWithTz(toTimeStamp(payload?.value, dateFormat), "h:mm a", uiTimezone)}
+			{formatDateWithTz(payload?.value, "h:mm a", uiTimezone)}
 		</Text>
 	);
 };

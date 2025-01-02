@@ -24,7 +24,6 @@ import { formatDateWithTz, formatDurationSplit } from "../../../Utils/timeUtils"
 import { useIsAdmin } from "../../../Hooks/useIsAdmin";
 import IconBox from "../../../Components/IconBox";
 import StatBox from "../../../Components/StatBox";
-import { toTimeStamp } from "../../../Utils/timeUtils";
 import UpBarChart from "./Charts/UpBarChart";
 import DownBarChart from "./Charts/DownBarChart";
 import ResponseGaugeChart from "./Charts/ResponseGaugeChart";
@@ -320,10 +319,7 @@ const DetailsPage = () => {
 													color={theme.palette.text.tertiary}
 												>
 													{formatDateWithTz(
-														toTimeStamp(
-															hoveredUptimeData._id,
-															dateRange === "month" ? "YYYY-MM-DD" : "YYYY-MM-DD-HH"
-														),
+														hoveredUptimeData._id,
 														dateFormat,
 														uiTimezone
 													)}
@@ -380,10 +376,7 @@ const DetailsPage = () => {
 													color={theme.palette.text.tertiary}
 												>
 													{formatDateWithTz(
-														toTimeStamp(
-															hoveredIncidentsData._id,
-															dateRange === "month" ? "YYYY-MM-DD" : "YYYY-MM-DD-HH"
-														),
+														hoveredIncidentsData._id,
 														dateFormat,
 														uiTimezone
 													)}
