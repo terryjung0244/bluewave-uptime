@@ -242,6 +242,12 @@ class NetworkService {
 		);
 	}
 
+	async getHardwareDetailsByMonitorId(config) {
+		const params = new URLSearchParams();
+		if (config.dateRange) params.append("dateRange", config.dateRange);
+
+		return this.axiosInstance.get(
+			`/monitors/hardware/details/${config.monitorId}?${params.toString()}`,
 	async getUptimeDetailsById(config) {
 		const params = new URLSearchParams();
 		if (config.dateRange) params.append("dateRange", config.dateRange);

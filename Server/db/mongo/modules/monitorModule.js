@@ -703,6 +703,286 @@ const getMonitorStatsById = async (req) => {
 	}
 };
 
+const getHardwareDetailsById = async (req) => {
+	try {
+		const { monitorId } = req.params;
+		const { dateRange } = req.query;
+		const monitor = await Monitor.findById(monitorId);
+		const dates = getDateRange(dateRange);
+		const formatLookup = {
+			day: "%Y-%m-%dT%H:00:00Z",
+			week: "%Y-%m-%dT%H:00:00Z",
+			month: "%Y-%m-%dT00:00:00Z",
+		};
+		const dateString = formatLookup[dateRange];
+		const hardwareStats = await HardwareCheck.aggregate([
+			{
+				$match: {
+					monitorId: monitor._id,
+					createdAt: { $gte: dates.start, $lte: dates.end },
+				},
+			},
+			{
+				$sort: {
+					createdAt: 1,
+				},
+			},
+			{
+				$facet: {
+					aggregateData: [
+						{
+							$group: {
+								_id: null,
+								latestCheck: {
+									$last: "$$ROOT",
+								},
+								totalChecks: {
+									$sum: 1,
+								},
+							},
+						},
+					],
+					upChecks: [
+						{
+							$match: {
+								status: true,
+							},
+						},
+						{
+							$group: {
+								_id: null,
+								totalChecks: {
+									$sum: 1,
+								},
+							},
+						},
+					],
+					checks: [
+						{
+							$limit: 1,
+						},
+						{
+							$project: {
+								diskCount: {
+									$size: "$disk",
+								},
+							},
+						},
+						{
+							$lookup: {
+								from: "hardwarechecks",
+								let: {
+									diskCount: "$diskCount",
+								},
+								pipeline: [
+									{
+										$match: {
+											$expr: {
+												$and: [
+													{ $eq: ["$monitorId", monitor._id] },
+													{ $gte: ["$createdAt", dates.start] },
+													{ $lte: ["$createdAt", dates.end] },
+												],
+											},
+										},
+									},
+									{
+										$group: {
+											_id: {
+												$dateToString: {
+													format: dateString,
+													date: "$createdAt",
+												},
+											},
+											avgCpuUsage: {
+												$avg: "$cpu.usage_percent",
+											},
+											avgMemoryUsage: {
+												$avg: "$memory.usage_percent",
+											},
+											avgTemperatures: {
+												$push: {
+													$ifNull: ["$cpu.temperature", [0]],
+												},
+											},
+											disks: {
+												$push: "$disk",
+											},
+										},
+									},
+									{
+										$project: {
+											_id: 1,
+											avgCpuUsage: 1,
+											avgMemoryUsage: 1,
+											avgTemperature: {
+												$map: {
+													input: {
+														$range: [
+															0,
+															{
+																$size: {
+																	// Handle null temperatures array
+																	$ifNull: [
+																		{ $arrayElemAt: ["$avgTemperatures", 0] },
+																		[0], // Default to single-element array if null
+																	],
+																},
+															},
+														],
+													},
+													as: "index",
+													in: {
+														$avg: {
+															$map: {
+																input: "$avgTemperatures",
+																as: "tempArray",
+																in: {
+																	$ifNull: [
+																		{ $arrayElemAt: ["$$tempArray", "$$index"] },
+																		0, // Default to 0 if element is null
+																	],
+																},
+															},
+														},
+													},
+												},
+											},
+											disks: {
+												$map: {
+													input: {
+														$range: [0, "$$diskCount"],
+													},
+													as: "diskIndex",
+													in: {
+														name: {
+															$concat: [
+																"disk",
+																{
+																	$toString: "$$diskIndex",
+																},
+															],
+														},
+														readSpeed: {
+															$avg: {
+																$map: {
+																	input: "$disks",
+																	as: "diskArray",
+																	in: {
+																		$arrayElemAt: [
+																			"$$diskArray.read_speed_bytes",
+																			"$$diskIndex",
+																		],
+																	},
+																},
+															},
+														},
+														writeSpeed: {
+															$avg: {
+																$map: {
+																	input: "$disks",
+																	as: "diskArray",
+																	in: {
+																		$arrayElemAt: [
+																			"$$diskArray.write_speed_bytes",
+																			"$$diskIndex",
+																		],
+																	},
+																},
+															},
+														},
+														totalBytes: {
+															$avg: {
+																$map: {
+																	input: "$disks",
+																	as: "diskArray",
+																	in: {
+																		$arrayElemAt: [
+																			"$$diskArray.total_bytes",
+																			"$$diskIndex",
+																		],
+																	},
+																},
+															},
+														},
+														freeBytes: {
+															$avg: {
+																$map: {
+																	input: "$disks",
+																	as: "diskArray",
+																	in: {
+																		$arrayElemAt: [
+																			"$$diskArray.free_bytes",
+																			"$$diskIndex",
+																		],
+																	},
+																},
+															},
+														},
+														usagePercent: {
+															$avg: {
+																$map: {
+																	input: "$disks",
+																	as: "diskArray",
+																	in: {
+																		$arrayElemAt: [
+																			"$$diskArray.usage_percent",
+																			"$$diskIndex",
+																		],
+																	},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								],
+								as: "hourlyStats",
+							},
+						},
+						{
+							$unwind: "$hourlyStats",
+						},
+						{
+							$replaceRoot: {
+								newRoot: "$hourlyStats",
+							},
+						},
+					],
+				},
+			},
+			{
+				$project: {
+					aggregateData: {
+						$arrayElemAt: ["$aggregateData", 0],
+					},
+					upChecks: {
+						$arrayElemAt: ["$upChecks", 0],
+					},
+					checks: {
+						$sortArray: {
+							input: "$checks",
+							sortBy: { _id: 1 },
+						},
+					},
+				},
+			},
+		]);
+
+		const monitorStats = {
+			...monitor.toObject(),
+			stats: hardwareStats[0],
+		};
+		return monitorStats;
+	} catch (error) {
+		error.service = SERVICE_NAME;
+		error.method = "getHardwareDetailsById";
+		throw error;
+	}
+};
+
 /**
  * Get a monitor by ID
  * @async
@@ -991,6 +1271,7 @@ export {
 	deleteMonitorsByUserId,
 	editMonitor,
 	addDemoMonitors,
+	getHardwareDetailsById,
 };
 
 // Helper functions
