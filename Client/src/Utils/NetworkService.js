@@ -247,7 +247,12 @@ class NetworkService {
 		if (config.dateRange) params.append("dateRange", config.dateRange);
 
 		return this.axiosInstance.get(
-			`/monitors/hardware/details/${config.monitorId}?${params.toString()}`
+			`/monitors/hardware/details/${config.monitorId}?${params.toString()}`,
+			{
+				headers: {
+					Authorization: `Bearer ${config.authToken}`,
+				},
+			}
 		);
 	}
 	async getUptimeDetailsById(config) {
