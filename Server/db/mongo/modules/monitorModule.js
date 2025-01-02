@@ -322,7 +322,6 @@ const getUptimeDetailsById = async (req) => {
 
 		const { dateRange, normalize } = req.query;
 		const dates = getDateRange(dateRange);
-		console.log(dates);
 		const formatLookup = {
 			day: "%Y-%m-%d-%H",
 			week: "%Y-%m-%d-%H",
