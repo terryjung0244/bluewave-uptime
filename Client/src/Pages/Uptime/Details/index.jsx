@@ -309,7 +309,7 @@ const DetailsPage = () => {
 											<Typography component="span">
 												{hoveredUptimeData !== null
 													? hoveredUptimeData.totalChecks
-													: (monitor.stats?.upChecksAggregate.totalChecks ?? 0)}
+													: (monitor.stats?.upChecksAggregate?.totalChecks ?? 0)}
 											</Typography>
 											{hoveredUptimeData !== null && hoveredUptimeData.time !== null && (
 												<Typography
@@ -340,7 +340,7 @@ const DetailsPage = () => {
 												{hoveredUptimeData !== null
 													? Math.floor(hoveredUptimeData?.avgResponseTime ?? 0)
 													: Math.floor(
-															((monitor?.stats?.upChecksAggregate.totalChecks ?? 0) /
+															((monitor?.stats?.upChecksAggregate?.totalChecks ?? 0) /
 																(monitor?.stats?.totalChecks ?? 1)) *
 																100
 														)}
@@ -368,7 +368,7 @@ const DetailsPage = () => {
 										<Typography component="span">
 											{hoveredIncidentsData !== null
 												? hoveredIncidentsData.totalChecks
-												: (monitor.stats?.downChecksAggregate.totalChecks ?? 0)}
+												: (monitor.stats?.downChecksAggregate?.totalChecks ?? 0)}
 										</Typography>
 										{hoveredIncidentsData !== null &&
 											hoveredIncidentsData.time !== null && (
@@ -404,7 +404,7 @@ const DetailsPage = () => {
 										<Typography component="h2">Average Response Time</Typography>
 									</Stack>
 									<ResponseGaugeChart
-										avgResponseTime={monitor?.stats?.groupAggregate.avgResponseTime ?? 0}
+										avgResponseTime={monitor?.stats?.groupAggregate?.avgResponseTime ?? 0}
 									/>
 								</ChartBox>
 								<ChartBox sx={{ padding: 0 }}>
