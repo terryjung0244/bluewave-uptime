@@ -141,31 +141,48 @@ class NewJobQueue {
 		return async (job) => {
 			try {
 				// Get all maintenance windows for this monitor
+				await job.updateProgress(0);
 				const monitorId = job.data._id;
 				const maintenanceWindowActive = await this.isInMaintenanceWindow(monitorId);
 				// If a maintenance window is active, we're done
 
 				if (maintenanceWindowActive) {
+					await job.updateProgress(100);
 					this.logger.info({
 						message: `Monitor ${monitorId} is in maintenance window`,
 						service: SERVICE_NAME,
 						method: "createWorker",
 					});
-					return;
+					return false;
 				}
 
 				// Get the current status
+				await job.updateProgress(30);
 				const networkResponse = await this.networkService.getStatus(job);
 				// Handle status change
+				await job.updateProgress(60);
 				const { monitor, statusChanged, prevStatus } =
 					await this.statusService.updateStatus(networkResponse);
 				// Handle notifications
-				this.notificationService.handleNotifications({
-					...networkResponse,
-					monitor,
-					prevStatus,
-					statusChanged,
-				});
+				await job.updateProgress(80);
+				this.notificationService
+					.handleNotifications({
+						...networkResponse,
+						monitor,
+						prevStatus,
+						statusChanged,
+					})
+					.catch((error) => {
+						this.logger.error({
+							message: error.message,
+							service: SERVICE_NAME,
+							method: "createJobHandler",
+							details: `Error sending notifications for job ${job.id}: ${error.message}`,
+							stack: error.stack,
+						});
+					});
+				await job.updateProgress(100);
+				return true;
 			} catch (error) {
 				this.logger.error({
 					message: error.message,
@@ -174,6 +191,7 @@ class NewJobQueue {
 					details: `Error processing job ${job.id}: ${error.message}`,
 					stack: error.stack,
 				});
+				throw error;
 			}
 		};
 	}
@@ -195,6 +213,15 @@ class NewJobQueue {
 	createWorker(queue) {
 		const worker = new this.Worker(queue.name, this.createJobHandler(), {
 			connection: this.connection,
+			concurrency: 5,
+		});
+		worker.on("failed", (job, err) => {
+			this.logger.error({
+				message: `Worker failed job: ${job.id}`,
+				service: SERVICE_NAME,
+				method: "createWorker",
+				stack: err.stack,
+			});
 		});
 		return worker;
 	}
